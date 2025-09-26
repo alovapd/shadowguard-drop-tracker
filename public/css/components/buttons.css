@@ -1,0 +1,82 @@
+/* css/components/buttons.css - Button Styles */
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--secondary-dark);
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    min-height: 44px;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
+.btn-primary {
+    border-color: var(--border-color);
+    background: var(--card-bg);
+}
+
+.btn-primary:hover {
+    border-color: var(--uo-blue);
+    background: var(--card-hover);
+}
+
+.btn-accent {
+    background: var(--gradient-gold);
+    color: var(--primary-dark);
+    font-weight: var(--font-weight-semibold);
+}
+
+.btn-accent:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+    border-color: var(--text-muted);
+    background: var(--card-hover);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: var(--font-size-xs);
+    min-height: 36px;
+}
+
+.btn-clear {
+    padding: 12px 20px;
+    white-space: nowrap;
+}
+
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--secondary-dark) !important;
+    border-color: var(--border-color) !important;
+}

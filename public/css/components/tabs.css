@@ -1,0 +1,273 @@
+/* Tab Component Styles */
+
+/* Multi-Party Tab Styles */
+
+/* Party Tab Navigation */
+.party-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: var(--spacing-lg);
+    background: var(--secondary-dark);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    overflow: hidden;
+}
+
+.party-tab {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--secondary-dark);
+    border: none;
+    border-right: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: var(--transition-normal);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    min-height: 60px;
+}
+
+.party-tab:last-child {
+    border-right: none;
+}
+
+.party-tab:hover {
+    background: var(--card-hover);
+    color: var(--text-light);
+}
+
+.party-tab.active {
+    background: var(--card-bg);
+    color: var(--accent-gold);
+    font-weight: var(--font-weight-semibold);
+    border-bottom: 3px solid var(--accent-gold);
+}
+
+.party-tab.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-gold);
+}
+
+.party-tab-label {
+    font-size: var(--font-size-base);
+}
+
+.party-tab-indicator {
+    font-size: var(--font-size-xs);
+    opacity: 0.8;
+    min-height: 16px;
+}
+
+.party-tab-indicator.has-participants {
+    color: var(--uo-blue);
+    font-weight: var(--font-weight-semibold);
+}
+
+.party-tab-indicator.has-drops {
+    color: var(--success-color);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Party Status Display */
+.party-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--secondary-dark);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+}
+
+.current-party-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-light);
+}
+
+.party-participant-count {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+/* Party Indicator in Cards */
+.party-indicator {
+    position: absolute;
+    top: -8px;
+    right: var(--spacing-md);
+    background: var(--uo-blue);
+    color: white;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    z-index: 10;
+}
+
+/* Party Badges */
+.party-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.party-badge.party-1 {
+    background: var(--uo-blue);
+    color: white;
+}
+
+.party-badge.party-2 {
+    background: var(--success-color);
+    color: white;
+}
+
+.party-badge.party-3 {
+    background: var(--accent-gold);
+    color: var(--primary-dark);
+}
+
+/* Party Status in Character Cards */
+.character-party-status {
+    margin: var(--spacing-sm) 0;
+}
+
+/* Filter Components */
+.party-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-right: var(--spacing-md);
+}
+
+.party-filter label {
+    font-size: var(--font-size-sm);
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.party-filter select {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--secondary-dark);
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+    min-width: 120px;
+}
+
+/* Analytics Party Filter */
+.analytics-party-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-right: var(--spacing-md);
+}
+
+.analytics-party-filter label {
+    font-size: var(--font-size-sm);
+    color: var(--text-light);
+    white-space: nowrap;
+}
+
+.analytics-party-filter select {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--secondary-dark);
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+    min-width: 120px;
+}
+
+/* Activity party indicator */
+.activity-party {
+    background: var(--uo-blue);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Run Card Party Badge */
+.run-badge.party {
+    background: var(--uo-blue);
+    color: white;
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Tab System (General) */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Navigation Button Active State */
+.nav-buttons .btn.active {
+    background: var(--accent-gold);
+    color: var(--primary-dark);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Responsive Design Updates for Party Tabs */
+@media (max-width: 768px) {
+    .party-tabs {
+        flex-direction: column;
+        border-radius: var(--radius-lg);
+        border-bottom: none;
+    }
+    
+    .party-tab {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        min-height: 50px;
+        flex-direction: row;
+        justify-content: space-between;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .party-tab:last-child {
+        border-bottom: none;
+    }
+    
+    .party-tab.active {
+        border-bottom: none;
+        border-left: 4px solid var(--accent-gold);
+    }
+    
+    .party-tab.active::before {
+        display: none;
+    }
+    
+    .party-status {
+        align-self: center;
+    }
+    
+    .party-filter,
+    .analytics-party-filter {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-xs);
+    }
+    
+    .party-filter label,
+    .analytics-party-filter label {
+        font-size: var(--font-size-xs);
+    }
+}

@@ -1,11 +1,17 @@
-// js/components/runs.js - Run Management Component
+// js/components/runs.js - Multi-Party Run Management Component with Card-Filtering Search
 class RunsComponent {
     constructor() {
-        this.currentRunState = {
-            participants: [],
-            drops: {}
+        // Multi-party state management
+        this.parties = {
+            1: { participants: [], drops: {}, lastSaved: null },
+            2: { participants: [], drops: {}, lastSaved: null },
+            3: { participants: [], drops: {}, lastSaved: null }
         };
+        this.currentParty = 1;
         this.shadowguardItems = [];
+        this.allRuns = []; // Store all runs for filtering
+        this.charactersWithStats = []; // Cache for performance
+        this.currentSearchQuery = ''; // Track current search
     }
 
     async init() {
@@ -19,7 +25,10 @@ class RunsComponent {
             // Set up event listeners
             this.setupEventListeners();
             
-            console.log('Runs component initialized');
+            // Initialize character search component
+            await this.initializeCharacterSearch();
+            
+            console.log('Multi-party Runs component initialized');
         } catch (error) {
             console.error('Failed to initialize runs component:', error);
         }
@@ -31,6 +40,198 @@ class RunsComponent {
         if (dateInput) {
             dateInput.addEventListener('change', this.validateDateTime.bind(this));
         }
+    }
+
+    // Initialize character search for participant selection - CARD FILTERING VERSION
+    async initializeCharacterSearch() {
+        const searchContainer = document.getElementById('participantSearchContainer');
+        if (!searchContainer) return;
+
+        // Create simple search input HTML (NO dropdown results container)
+        searchContainer.innerHTML = `
+            <div class="character-search-container">
+                <div class="character-search-input-container">
+                    <input 
+                        type="text" 
+                        id="participantSearchInput" 
+                        class="character-search-input" 
+                        placeholder="Search characters to filter cards..."
+                        autocomplete="off"
+                    >
+                    <span class="search-icon">🔍</span>
+                    <button class="search-clear hidden" id="participantSearchClear">×</button>
+                </div>
+            </div>
+        `;
+
+        // Initialize search functionality
+        this.setupParticipantSearch();
+    }
+
+    setupParticipantSearch() {
+        const searchInput = document.getElementById('participantSearchInput');
+        const searchClear = document.getElementById('participantSearchClear');
+        
+        if (!searchInput || !searchClear) return;
+
+        let searchTimeout;
+
+        // Search input event - filter character cards directly
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            this.currentSearchQuery = query;
+            
+            // Show/hide clear button
+            if (query.length > 0) {
+                searchClear.classList.remove('hidden');
+            } else {
+                searchClear.classList.add('hidden');
+            }
+
+            // Debounce search and re-render cards with filter
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.renderCharacterCards(query);
+            }, 200);
+        });
+
+        // Clear search
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            this.currentSearchQuery = '';
+            searchClear.classList.add('hidden');
+            this.renderCharacterCards(); // Re-render without filter
+            searchInput.focus();
+        });
+    }
+
+    // Filter characters based on search query
+    filterCharactersBySearch(characters, searchQuery) {
+        if (!searchQuery || searchQuery.length === 0) {
+            return characters; // Return all characters if no search query
+        }
+
+        const lowerQuery = searchQuery.toLowerCase();
+        
+        return characters
+            .filter(character => 
+                character.name.toLowerCase().includes(lowerQuery)
+            )
+            .sort((a, b) => {
+                // Prioritize exact matches and starts-with matches
+                const aName = a.name.toLowerCase();
+                const bName = b.name.toLowerCase();
+                
+                const aStartsWith = aName.startsWith(lowerQuery);
+                const bStartsWith = bName.startsWith(lowerQuery);
+                
+                if (aStartsWith && !bStartsWith) return -1;
+                if (bStartsWith && !aStartsWith) return 1;
+                
+                // Then by recent activity (same as original sorting)
+                const aLastActivity = new Date(a.lastActivityDate || 0);
+                const bLastActivity = new Date(b.lastActivityDate || 0);
+                
+                return bLastActivity - aLastActivity;
+            });
+    }
+
+    clearParticipantSearch() {
+        const searchInput = document.getElementById('participantSearchInput');
+        const searchClear = document.getElementById('participantSearchClear');
+        
+        if (searchInput) searchInput.value = '';
+        if (searchClear) searchClear.classList.add('hidden');
+        this.currentSearchQuery = '';
+    }
+
+    // Party Management
+    async initializePartyTabs() {
+        // Update party tab indicators
+        this.updatePartyTabIndicators();
+        
+        // Update current party display
+        this.updateCurrentPartyDisplay();
+        
+        // Set active party tab
+        this.setActivePartyTab(this.currentParty);
+    }
+
+    switchParty(partyNumber) {
+        if (partyNumber < 1 || partyNumber > 3) return;
+        if (partyNumber === this.currentParty) return;
+
+        console.log(`Switching from Party ${this.currentParty} to Party ${partyNumber}`);
+        
+        this.currentParty = partyNumber;
+        
+        // Update UI
+        this.setActivePartyTab(partyNumber);
+        this.updateCurrentPartyDisplay();
+        this.updatePartyTabIndicators();
+        
+        // Keep search but re-render cards for new party context
+        this.renderCharacterCards(this.currentSearchQuery);
+        
+        // Update run history filter if needed
+        const historyFilter = document.getElementById('historyPartyFilter');
+        if (historyFilter && historyFilter.value === 'all') {
+            // Keep showing all parties, but could auto-switch to current party
+        }
+    }
+
+    setActivePartyTab(partyNumber) {
+        // Remove active class from all tabs
+        document.querySelectorAll('.party-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Add active class to selected tab
+        const activeTab = document.querySelector(`[data-party="${partyNumber}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+        }
+    }
+
+    updateCurrentPartyDisplay() {
+        const display = document.getElementById('currentPartyDisplay');
+        if (display) {
+            display.textContent = `Party ${this.currentParty}`;
+        }
+        
+        this.updateParticipantCount();
+    }
+
+    updateParticipantCount() {
+        const count = this.getCurrentPartyState().participants.length;
+        const countDisplay = document.getElementById('partyParticipantCount');
+        if (countDisplay) {
+            countDisplay.textContent = `${count} participant${count !== 1 ? 's' : ''}`;
+        }
+    }
+
+    updatePartyTabIndicators() {
+        for (let partyNum = 1; partyNum <= 3; partyNum++) {
+            const indicator = document.getElementById(`partyIndicator${partyNum}`);
+            const party = this.parties[partyNum];
+            
+            if (indicator) {
+                const participantCount = party.participants.length;
+                const dropCount = Object.keys(party.drops).length;
+                
+                if (participantCount === 0) {
+                    indicator.textContent = '';
+                    indicator.className = 'party-tab-indicator';
+                } else {
+                    indicator.textContent = `${participantCount}${dropCount > 0 ? ` (${dropCount} drops)` : ''}`;
+                    indicator.className = `party-tab-indicator ${dropCount > 0 ? 'has-drops' : 'has-participants'}`;
+                }
+            }
+        }
+    }
+
+    getCurrentPartyState() {
+        return this.parties[this.currentParty];
     }
 
     setCurrentDateTime() {
@@ -54,15 +255,15 @@ class RunsComponent {
         }
     }
 
-    async renderCharacterCards() {
+    async renderCharacterCards(searchQuery = '') {
         const container = document.getElementById('characterCardsGrid');
         if (!container) return;
 
         try {
             // Get characters with their drop rate stats for sorting
-            const characters = await this.getCharactersWithStats();
+            this.charactersWithStats = await this.getCharactersWithStats();
             
-            if (characters.length === 0) {
+            if (this.charactersWithStats.length === 0) {
                 container.innerHTML = `
                     <div class="no-characters-message">
                         <h4>No Characters Available</h4>
@@ -72,25 +273,43 @@ class RunsComponent {
                 return;
             }
 
-            // Initialize all characters as participants by default if none are selected
-            if (this.currentRunState.participants.length === 0) {
-                this.currentRunState.participants = characters.map(c => c.id);
+            const currentPartyState = this.getCurrentPartyState();
+            
+            // Sort characters by activity (most recent participation first), then by drop rate
+            let sortedCharacters = this.sortCharactersByActivity(this.charactersWithStats);
+            
+            // Apply search filter if provided
+            if (searchQuery && searchQuery.trim().length > 0) {
+                sortedCharacters = this.filterCharactersBySearch(sortedCharacters, searchQuery.trim());
+                
+                // Show message if no characters match search
+                if (sortedCharacters.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-characters-message">
+                            <h4>No Characters Found</h4>
+                            <p>No characters match "${searchQuery}". Try a different search term.</p>
+                        </div>
+                    `;
+                    return;
+                }
             }
 
-            // Sort characters by drop rate (desc) then alphabetical
-            const sortedCharacters = this.sortCharactersByDropRate(characters);
-
             container.innerHTML = sortedCharacters.map(character => {
-                const isSelected = this.currentRunState.participants.includes(character.id);
-                const selectedDrop = this.currentRunState.drops[character.id] || '';
+                const isSelected = currentPartyState.participants.includes(character.id);
+                const selectedDrop = currentPartyState.drops[character.id] || '';
+                const inOtherParty = this.isCharacterInOtherParty(character.id);
                 
                 return `
-                    <div class="character-run-card ${isSelected ? 'selected' : ''}" 
-                         data-character-id="${character.id}">
+                    <div class="character-run-card ${isSelected ? 'selected' : ''} ${inOtherParty ? 'unavailable' : ''}" 
+                         data-character-id="${character.id}"
+                         onclick="${inOtherParty ? '' : `runsComponent.toggleParticipant(${character.id})`}"
+                         style="${inOtherParty ? '' : 'cursor: pointer;'}">
+                        ${inOtherParty ? `<div class="party-indicator">In Party ${inOtherParty}</div>` : ''}
+                        
                         <div class="character-card-header">
                             <span class="character-name">${character.name}</span>
-                            <div class="participant-toggle ${isSelected ? 'active' : ''}" 
-                                 onclick="runsComponent.toggleParticipant(${character.id})">
+                            <div class="participant-toggle ${isSelected ? 'active' : ''} ${inOtherParty ? 'disabled' : ''}" 
+                                 style="pointer-events: none;">
                                 ${isSelected ? '✓' : ''}
                             </div>
                         </div>
@@ -101,7 +320,7 @@ class RunsComponent {
                             ${this.renderPerformanceIndicator(character)}
                         </div>
                         
-                        <div class="drop-selection">
+                        <div class="drop-selection" onclick="event.stopPropagation();">
                             <select class="drop-select ${isSelected ? '' : 'disabled'}" 
                                     data-character-id="${character.id}"
                                     ${isSelected ? '' : 'disabled'}
@@ -118,10 +337,22 @@ class RunsComponent {
                 `;
             }).join('');
 
+            this.updateParticipantCount();
+
         } catch (error) {
             console.error('Failed to render character cards:', error);
             container.innerHTML = '<p class="error">Failed to load characters</p>';
         }
+    }
+
+    // Check if character is in a different party
+    isCharacterInOtherParty(characterId) {
+        for (let partyNum = 1; partyNum <= 3; partyNum++) {
+            if (partyNum !== this.currentParty && this.parties[partyNum].participants.includes(characterId)) {
+                return partyNum;
+            }
+        }
+        return false;
     }
 
     renderPerformanceIndicator(character) {
@@ -175,7 +406,8 @@ class RunsComponent {
                     totalDrops: stats.total_drops || 0,
                     totalRuns: stats.total_runs_participated || 0,
                     runsWithDrops: stats.runs_with_drops || 0,
-                    dropRate: parseFloat(dropRate)
+                    dropRate: parseFloat(dropRate),
+                    lastActivityDate: stats.last_participation_date || character.created_at
                 };
             });
         } catch (error) {
@@ -187,72 +419,102 @@ class RunsComponent {
                 totalDrops: 0,
                 totalRuns: 0,
                 runsWithDrops: 0,
-                dropRate: 0
+                dropRate: 0,
+                lastActivityDate: char.created_at
             }));
         }
     }
 
-    sortCharactersByDropRate(characters) {
+    sortCharactersByActivity(characters) {
         return characters.sort((a, b) => {
-            // Primary sort: Drop rate (descending)
+            // Primary sort: Most recently active characters first
+            const aLastActivity = new Date(a.lastActivityDate || 0);
+            const bLastActivity = new Date(b.lastActivityDate || 0);
+            
+            if (bLastActivity.getTime() !== aLastActivity.getTime()) {
+                return bLastActivity - aLastActivity;
+            }
+            
+            // Secondary sort: Higher drop rate
             if (b.dropRate !== a.dropRate) {
                 return b.dropRate - a.dropRate;
             }
-            // Secondary sort: Alphabetical by name
+            
+            // Tertiary sort: Alphabetical by name
             return a.name.localeCompare(b.name);
         });
     }
 
     toggleParticipant(characterId) {
-        const participantIndex = this.currentRunState.participants.indexOf(characterId);
+        // Check if character is in another party
+        const inOtherParty = this.isCharacterInOtherParty(characterId);
+        if (inOtherParty) {
+            showNotification('warning', `Character is already assigned to Party ${inOtherParty}`);
+            return;
+        }
+
+        const currentPartyState = this.getCurrentPartyState();
+        const participantIndex = currentPartyState.participants.indexOf(characterId);
         
         if (participantIndex === -1) {
             // Add participant
-            this.currentRunState.participants.push(characterId);
+            if (currentPartyState.participants.length >= 10) {
+                showNotification('warning', 'Maximum 10 participants allowed per party');
+                return;
+            }
+            currentPartyState.participants.push(characterId);
         } else {
             // Remove participant and their drop
-            this.currentRunState.participants.splice(participantIndex, 1);
-            delete this.currentRunState.drops[characterId];
+            currentPartyState.participants.splice(participantIndex, 1);
+            delete currentPartyState.drops[characterId];
         }
 
-        // Re-render to update UI
-        this.renderCharacterCards();
+        // Update indicators and re-render with current search
+        this.updatePartyTabIndicators();
+        this.renderCharacterCards(this.currentSearchQuery);
     }
 
     updateCharacterDrop(characterId, itemId) {
+        const currentPartyState = this.getCurrentPartyState();
+        
         if (itemId && itemId !== '') {
-            this.currentRunState.drops[characterId] = parseInt(itemId);
+            currentPartyState.drops[characterId] = parseInt(itemId);
         } else {
-            delete this.currentRunState.drops[characterId];
+            delete currentPartyState.drops[characterId];
         }
+        
+        this.updatePartyTabIndicators();
     }
 
     async saveCurrentRun() {
         try {
             // Validate run data
-            this.validateRunData();
+            this.validateCurrentPartyRunData();
 
             const runDateTime = document.getElementById('runDateTime').value;
             if (!runDateTime) {
                 throw new Error('Run date and time are required');
             }
 
-            // Prepare run data
+            const currentPartyState = this.getCurrentPartyState();
+
+            // Prepare run data with party number
             const runData = {
                 date: runDateTime,
-                participantIds: this.currentRunState.participants,
+                participantIds: currentPartyState.participants,
+                partyNumber: this.currentParty,
                 success: true, // Always true since we're tracking drops directly
                 notes: null
             };
 
             showLoading(true);
 
-            // Create the run
+            // Create the run (API needs to handle party_number)
             const run = await api.addRun(runData);
             
             // Add any drops that were recorded
             const dropPromises = [];
-            for (const [characterId, itemId] of Object.entries(this.currentRunState.drops)) {
+            for (const [characterId, itemId] of Object.entries(currentPartyState.drops)) {
                 if (itemId) {
                     dropPromises.push(
                         api.addDrop({
@@ -270,18 +532,18 @@ class RunsComponent {
                 await Promise.all(dropPromises);
             }
 
-            // Reset the form
-            this.resetRunForm();
+            // Reset the current party form
+            this.resetCurrentPartyForm();
 
             // Refresh the runs list
             await this.loadRecentRuns();
 
             // Re-render character cards to update stats/sorting
-            await this.renderCharacterCards();
+            await this.renderCharacterCards(this.currentSearchQuery);
 
-            const dropCount = Object.keys(this.currentRunState.drops).length;
+            const dropCount = Object.keys(currentPartyState.drops).length;
             showNotification('success', 
-                `Run saved successfully! ${this.currentRunState.participants.length} participants, ${dropCount} drops recorded.`);
+                `Party ${this.currentParty} run saved! ${currentPartyState.participants.length} participants, ${dropCount} drops recorded.`);
 
         } catch (error) {
             console.error('Failed to save run:', error);
@@ -291,19 +553,21 @@ class RunsComponent {
         }
     }
 
-    validateRunData() {
+    validateCurrentPartyRunData() {
         const dateTime = document.getElementById('runDateTime').value;
         
         if (!dateTime) {
             throw new Error('Run date and time are required');
         }
 
-        if (this.currentRunState.participants.length === 0) {
-            throw new Error('At least one participant is required');
+        const currentPartyState = this.getCurrentPartyState();
+
+        if (currentPartyState.participants.length === 0) {
+            throw new Error(`At least one participant is required for Party ${this.currentParty}`);
         }
 
-        if (this.currentRunState.participants.length > 10) {
-            throw new Error('Maximum of 10 participants allowed');
+        if (currentPartyState.participants.length > 10) {
+            throw new Error('Maximum of 10 participants allowed per party');
         }
 
         // Check if date is not in the future (allow some tolerance for timezone issues)
@@ -316,24 +580,33 @@ class RunsComponent {
         }
     }
 
-    resetRunForm() {
-        // Reset drops but keep participants selected by default
-        this.currentRunState.drops = {};
+    resetCurrentPartyForm() {
+        const currentPartyState = this.getCurrentPartyState();
         
-        // Keep all characters selected for next run
-        // (Don't reset participants - this makes logging consecutive runs faster)
-
+        // Reset drops but keep participants selected by default for faster consecutive runs
+        currentPartyState.drops = {};
+        currentPartyState.lastSaved = new Date();
+        
+        // Keep all characters selected for next run (speeds up consecutive logging)
+        
         // Reset date to current
         this.setCurrentDateTime();
+
+        // Clear search interface
+        this.clearParticipantSearch();
+
+        // Update indicators
+        this.updatePartyTabIndicators();
 
         // Re-render character cards
         this.renderCharacterCards();
     }
 
+    // Run History Management
     async loadRecentRuns() {
         try {
-            const runs = await api.getRuns(20);
-            this.renderRunsList(runs);
+            this.allRuns = await api.getRuns(50); // Load more runs for filtering
+            this.renderRunsList(this.allRuns);
         } catch (error) {
             console.error('Failed to load recent runs:', error);
             const container = document.getElementById('runsList');
@@ -343,17 +616,35 @@ class RunsComponent {
         }
     }
 
+    filterRunHistory() {
+        const filterSelect = document.getElementById('historyPartyFilter');
+        if (!filterSelect) return;
+
+        const selectedParty = filterSelect.value;
+        let filteredRuns = this.allRuns;
+
+        if (selectedParty !== 'all') {
+            const partyNumber = parseInt(selectedParty);
+            filteredRuns = this.allRuns.filter(run => run.party_number === partyNumber);
+        }
+
+        this.renderRunsList(filteredRuns);
+    }
+
     renderRunsList(runs) {
         const container = document.getElementById('runsList');
         if (!container) return;
 
         if (runs.length === 0) {
+            const filterSelect = document.getElementById('historyPartyFilter');
+            const isFiltered = filterSelect && filterSelect.value !== 'all';
+            
             container.innerHTML = `
                 <div class="run-card">
                     <div class="run-header">
-                        <div class="run-date">No Runs Yet</div>
+                        <div class="run-date">${isFiltered ? 'No Runs for Selected Party' : 'No Runs Yet'}</div>
                     </div>
-                    <div class="run-details">Log your first Shadowguard encounter above</div>
+                    <div class="run-details">${isFiltered ? 'Try selecting "All Parties" or a different party' : 'Log your first Shadowguard encounter above'}</div>
                 </div>
             `;
             return;
@@ -362,12 +653,14 @@ class RunsComponent {
         container.innerHTML = runs.map(run => {
             const runDate = new Date(run.date);
             const hasDrops = run.total_drops > 0;
+            const partyNumber = run.party_number || 1; // Default to Party 1 for backward compatibility
             
             return `
                 <div class="run-card ${hasDrops ? 'has-drops' : 'no-drops'}">
                     <div class="run-header">
                         <div class="run-date">${formatDateTime(run.date)}</div>
                         <div class="run-badges">
+                            <span class="run-badge party">Party ${partyNumber}</span>
                             <span class="run-badge participants">${run.participant_count} participants</span>
                             ${hasDrops ? 
                                 `<span class="run-badge drops">${run.total_drops} drops</span>` : 
@@ -394,6 +687,35 @@ class RunsComponent {
         await this.loadRecentRuns();
         showNotification('success', 'Runs list refreshed');
     }
+
+    // Clear all parties (utility function for development/testing)
+    clearAllParties() {
+        this.parties = {
+            1: { participants: [], drops: {}, lastSaved: null },
+            2: { participants: [], drops: {}, lastSaved: null },
+            3: { participants: [], drops: {}, lastSaved: null }
+        };
+        this.updatePartyTabIndicators();
+        this.renderCharacterCards();
+        console.log('All parties cleared');
+    }
+
+    // Get summary of all parties (utility function)
+    getPartySummary() {
+        const summary = {};
+        for (let partyNum = 1; partyNum <= 3; partyNum++) {
+            const party = this.parties[partyNum];
+            summary[`party${partyNum}`] = {
+                participants: party.participants.length,
+                drops: Object.keys(party.drops).length,
+                characterNames: party.participants.map(id => {
+                    const character = this.charactersWithStats.find(c => c.id === id);
+                    return character ? character.name : `ID:${id}`;
+                })
+            };
+        }
+        return summary;
+    }
 }
 
 // Global instance
@@ -406,6 +728,14 @@ function saveCurrentRun() {
 
 function refreshRuns() {
     runsComponent.refreshRuns();
+}
+
+function switchParty(partyNumber) {
+    runsComponent.switchParty(partyNumber);
+}
+
+function filterRunHistory() {
+    runsComponent.filterRunHistory();
 }
 
 // Export for use in other modules

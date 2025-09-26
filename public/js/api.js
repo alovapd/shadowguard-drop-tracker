@@ -63,21 +63,25 @@ class ShadowguardAPI {
         });
     }
 
-    // Run API methods
-    async getRuns(limit = 50) {
-        const url = `${this.endpoints.runs}?limit=${limit}`;
+    // Run API methods - Updated for multi-party support
+    async getRuns(limit = 50, partyNumber = null) {
+        let url = `${this.endpoints.runs}?limit=${limit}`;
+        if (partyNumber !== null && partyNumber !== 'all') {
+            url += `&party=${partyNumber}`;
+        }
         return this.request(url);
     }
 
     async addRun(runData) {
-        const { date, participantIds, success, notes } = runData;
+        const { date, participantIds, success, notes, partyNumber } = runData;
         return this.request(this.endpoints.runs, {
             method: 'POST',
             body: JSON.stringify({
                 date,
                 participantIds,
                 success: success === 'true' || success === true,
-                notes
+                notes,
+                partyNumber: partyNumber || 1 // Default to Party 1 for backward compatibility
             })
         });
     }
@@ -101,38 +105,54 @@ class ShadowguardAPI {
         return this.request(this.endpoints.items);
     }
 
-    // Analytics API methods
-    async getOverviewStats() {
-        return this.request(this.endpoints.analytics.overview);
+    // Analytics API methods - Updated for multi-party support
+    async getOverviewStats(partyNumber = null) {
+        let url = this.endpoints.analytics.overview;
+        if (partyNumber !== null && partyNumber !== 'all') {
+            url += `?party=${partyNumber}`;
+        }
+        return this.request(url);
     }
 
+    // CRITICAL FIX: Character stats should NEVER be filtered by party
+    // Character performance must aggregate across ALL parties
     async getCharacterStats() {
+        // NO party parameter - always get stats across all parties
         return this.request(this.endpoints.analytics.characterStats);
     }
 
-    async getItemDropRates() {
-        return this.request(this.endpoints.analytics.itemRates);
+    async getItemDropRates(partyNumber = null) {
+        let url = this.endpoints.analytics.itemRates;
+        if (partyNumber !== null && partyNumber !== 'all') {
+            url += `?party=${partyNumber}`;
+        }
+        return this.request(url);
     }
 
-    async getRecentActivity() {
-        return this.request(this.endpoints.analytics.recentActivity);
+    async getRecentActivity(partyNumber = null) {
+        let url = this.endpoints.analytics.recentActivity;
+        if (partyNumber !== null && partyNumber !== 'all') {
+            url += `?party=${partyNumber}`;
+        }
+        return this.request(url);
     }
 
-    // Batch operations for efficiency
-    async getAllAnalytics() {
+    // Batch operations for efficiency - Updated for multi-party support
+    async getAllAnalytics(partyNumber = null) {
         try {
             const [overview, characterStats, itemRates, recentActivity] = await Promise.all([
-                this.getOverviewStats(),
-                this.getCharacterStats(),
-                this.getItemDropRates(),
-                this.getRecentActivity()
+                this.getOverviewStats(partyNumber),
+                this.getCharacterStats(), // NO party parameter - always get all parties
+                this.getItemDropRates(partyNumber),
+                this.getRecentActivity(partyNumber)
             ]);
 
             return {
                 overview,
                 characterStats,
                 itemRates,
-                recentActivity
+                recentActivity,
+                partyNumber
             };
         } catch (error) {
             console.error('Failed to load analytics:', error);
@@ -145,7 +165,7 @@ class ShadowguardAPI {
             const [characters, items, runs] = await Promise.all([
                 this.getCharacters(),
                 this.getShadowguardItems(),
-                this.getRuns(20) // Get last 20 runs for initial load
+                this.getRuns(50) // Get last 50 runs for initial load (all parties)
             ]);
 
             return {
@@ -157,6 +177,40 @@ class ShadowguardAPI {
             console.error('Failed to load initial data:', error);
             throw error;
         }
+    }
+
+    // Multi-party specific methods
+    async getRunsByParty(partyNumber, limit = 50) {
+        return this.getRuns(limit, partyNumber);
+    }
+
+    async getPartyStats() {
+        try {
+            const [party1, party2, party3] = await Promise.all([
+                this.getOverviewStats(1),
+                this.getOverviewStats(2),
+                this.getOverviewStats(3)
+            ]);
+
+            return {
+                party1,
+                party2,
+                party3
+            };
+        } catch (error) {
+            console.error('Failed to load party stats:', error);
+            throw error;
+        }
+    }
+
+    // Character search functionality (for Phase 2)
+    async searchCharacters(query, limit = 10) {
+        if (!query || query.length < 3) {
+            return [];
+        }
+        
+        const url = `${this.endpoints.characters}/search?q=${encodeURIComponent(query)}&limit=${limit}`;
+        return this.request(url);
     }
 }
 
@@ -176,25 +230,57 @@ function showLoading(show = true) {
 }
 
 function showNotification(type = 'info', message = '', duration = 5000) {
-    // Create notification element if it doesn't exist
-    let notification = document.getElementById('notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'notification';
-        notification.className = 'notification hidden';
-        document.body.appendChild(notification);
+    // Remove existing notifications first
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => {
+        if (!notification.classList.contains('notification-container')) {
+            notification.remove();
+        }
+    });
+
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
+        notificationContainer = document.createElement('div');
+        notificationContainer.id = 'notificationContainer';
+        notificationContainer.className = 'notification-container';
+        document.body.appendChild(notificationContainer);
     }
 
-    // Set notification content and type
-    notification.textContent = message;
+    // Create notification element
+    const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     
-    // Show notification
-    notification.classList.remove('hidden');
+    // Create notification content
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'notification-message';
+    messageSpan.textContent = message;
+    
+    const closeButton = document.createElement('button');
+    closeButton.className = 'notification-close';
+    closeButton.innerHTML = '×';
+    closeButton.onclick = () => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    };
+    
+    notification.appendChild(messageSpan);
+    notification.appendChild(closeButton);
+    notificationContainer.appendChild(notification);
+    
+    // Show notification with animation
+    setTimeout(() => notification.classList.add('show'), 10);
     
     // Auto-hide after duration
     setTimeout(() => {
-        notification.classList.add('hidden');
+        if (notification.parentNode) {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
+        }
     }, duration);
 }
 
@@ -209,7 +295,7 @@ async function withErrorHandler(asyncFn, errorMessage = 'Operation failed') {
     }
 }
 
-// Validation helpers
+// Validation helpers - Updated for multi-party support
 function validateCharacterName(name) {
     if (!name || !name.trim()) {
         throw new Error('Character name is required');
@@ -223,7 +309,7 @@ function validateCharacterName(name) {
 }
 
 function validateRunData(runData) {
-    const { date, participantIds } = runData;
+    const { date, participantIds, partyNumber } = runData;
     
     if (!date) {
         throw new Error('Run date is required');
@@ -236,8 +322,17 @@ function validateRunData(runData) {
     if (participantIds.length > 10) {
         throw new Error('Maximum of 10 participants allowed');
     }
+
+    // Validate party number
+    const party = parseInt(partyNumber) || 1;
+    if (party < 1 || party > 3) {
+        throw new Error('Party number must be 1, 2, or 3');
+    }
     
-    return runData;
+    return {
+        ...runData,
+        partyNumber: party
+    };
 }
 
 function validateDropData(dropData) {
@@ -258,6 +353,50 @@ function validateDropData(dropData) {
     };
 }
 
+// Utility functions for formatting dates and times
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+// Party-related utility functions
+function getPartyDisplayName(partyNumber) {
+    return `Party ${partyNumber}`;
+}
+
+function validatePartyNumber(partyNumber) {
+    const party = parseInt(partyNumber);
+    if (isNaN(party) || party < 1 || party > 3) {
+        return 1; // Default to Party 1
+    }
+    return party;
+}
+
 // Export for use in other modules
 window.ShadowguardAPI = ShadowguardAPI;
 window.api = api;
@@ -267,3 +406,8 @@ window.withErrorHandler = withErrorHandler;
 window.validateCharacterName = validateCharacterName;
 window.validateRunData = validateRunData;
 window.validateDropData = validateDropData;
+window.formatDate = formatDate;
+window.formatDateTime = formatDateTime;
+window.formatTime = formatTime;
+window.getPartyDisplayName = getPartyDisplayName;
+window.validatePartyNumber = validatePartyNumber;

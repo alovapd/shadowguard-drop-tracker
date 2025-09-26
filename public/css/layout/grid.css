@@ -1,0 +1,340 @@
+/* Grid Layout Styles */
+
+/* Main Layout Container */
+.main-content {
+    max-width: var(--container-max-width);
+    margin: 0 auto;
+    padding: var(--spacing-xl);
+    min-height: calc(100vh - var(--header-height));
+}
+
+/* Stats Grid Layout */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+/* Character Grids */
+.characters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.character-stats-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.character-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Analytics Sections */
+.analytics-sections {
+    display: grid;
+    gap: var(--spacing-xl);
+}
+
+.analytics-section {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+}
+
+.analytics-section h3 {
+    color: var(--text-light);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: var(--spacing-md);
+}
+
+/* Drop Items Grid */
+.common-drops {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Cameo Variants Grid */
+.cameo-section {
+    grid-column: 1 / -1;
+    margin-top: var(--spacing-lg);
+}
+
+.cameo-section h4 {
+    color: var(--accent-gold);
+    margin: var(--spacing-lg) 0 var(--spacing-md) 0;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+    font-size: var(--font-size-xl);
+}
+
+.cameo-variants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+/* Run Interface Sections */
+.new-run-interface {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.character-selection-section {
+    margin-bottom: var(--spacing-xl);
+}
+
+.character-selection-section h3 {
+    color: var(--text-light);
+    margin-bottom: var(--spacing-lg);
+    font-size: var(--font-size-xl);
+}
+
+.runs-history-section {
+    margin-top: var(--spacing-2xl);
+}
+
+/* Runs List Layout */
+.runs-list {
+    display: grid;
+    gap: var(--spacing-lg);
+}
+
+/* Recent Activity Layout */
+.recent-activity {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+.recent-activity-item {
+    background: var(--secondary-dark);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+    position: relative;
+    transition: var(--transition-normal);
+}
+
+.recent-activity-item.recent {
+    border-color: var(--accent-gold);
+    background: rgba(255, 215, 0, 0.05);
+}
+
+.recent-activity-item:hover {
+    background: var(--card-hover);
+    transform: translateY(-1px);
+}
+
+.recent-binding-item {
+    background: var(--secondary-dark);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Activity Info Layout */
+.activity-info {
+    flex: 1;
+}
+
+.activity-description {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.activity-date {
+    color: var(--text-light);
+    font-weight: var(--font-weight-semibold);
+}
+
+.activity-participants {
+    color: var(--uo-blue);
+    font-size: var(--font-size-sm);
+}
+
+.activity-drops.success {
+    color: var(--success-color);
+    font-weight: var(--font-weight-semibold);
+}
+
+.activity-drops.none {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.activity-details {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+.participants-list,
+.drops-list {
+    margin-bottom: var(--spacing-xs);
+}
+
+.binding-info {
+    flex: 1;
+}
+
+.binding-description {
+    color: var(--text-light);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 0.3rem;
+}
+
+.binding-timestamp {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+}
+
+/* Recent Badge */
+.recent-badge {
+    position: absolute;
+    top: -8px;
+    right: var(--spacing-lg);
+    background: var(--accent-gold);
+    color: var(--primary-dark);
+    padding: 0.2rem 0.8rem;
+    border-radius: var(--radius-xl);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+}
+
+/* Cameo Summary */
+.cameo-summary {
+    display: flex;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.cameo-stat {
+    color: var(--accent-gold);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+}
+
+/* Error and Empty States */
+.error-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+
+.error-message {
+    color: #ef4444;
+    margin-bottom: var(--spacing-md);
+    font-weight: var(--font-weight-medium);
+}
+
+.no-characters-message {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: var(--spacing-2xl);
+    background: var(--card-bg);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.no-characters-message h4 {
+    color: var(--text-light);
+    margin-bottom: var(--spacing-md);
+}
+
+.no-characters-message p {
+    color: var(--text-muted);
+}
+
+/* Analytics Notice */
+.analytics-notice {
+    background: rgba(74, 144, 226, 0.1);
+    border: 1px solid var(--uo-blue);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md);
+}
+
+.notice-content {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+}
+
+.notice-icon {
+    font-size: var(--font-size-lg);
+    margin-top: 1px;
+}
+
+.notice-text {
+    color: var(--text-light);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-normal);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        padding: var(--spacing-md);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .characters-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .character-stats-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .character-cards-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .common-drops {
+        grid-template-columns: 1fr;
+    }
+    
+    .cameo-variants-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-description {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .cameo-summary {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+}

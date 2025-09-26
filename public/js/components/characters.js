@@ -1,7 +1,10 @@
-// js/components/characters.js - Character Management Component
+// js/components/characters.js - Character Management Component (Phase 2 Updated)
 class CharactersComponent {
     constructor() {
         this.characters = [];
+        this.filteredCharacters = [];
+        this.sortBy = 'name'; // 'name', 'recent', 'id'
+        this.searchQuery = '';
     }
 
     async init() {
@@ -20,16 +23,70 @@ class CharactersComponent {
         if (form) {
             form.addEventListener('submit', this.handleAddCharacter.bind(this));
         }
+
+        // Character search input
+        const searchInput = document.getElementById('characterSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', this.handleCharacterSearch.bind(this));
+        }
+
+        // Sort controls
+        const sortSelect = document.getElementById('characterSort');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', this.handleSortChange.bind(this));
+        }
     }
 
     async loadCharacters() {
         try {
             this.characters = await api.getCharacters();
+            this.updateFilteredCharacters();
             this.renderCharacters();
         } catch (error) {
             console.error('Failed to load characters:', error);
             this.renderError('Failed to load characters');
         }
+    }
+
+    // Phase 2: Handle character search within the characters tab
+    handleCharacterSearch(e) {
+        this.searchQuery = e.target.value.trim().toLowerCase();
+        this.updateFilteredCharacters();
+        this.renderCharacters();
+    }
+
+    // Phase 2: Handle sort option changes
+    handleSortChange(e) {
+        this.sortBy = e.target.value;
+        this.updateFilteredCharacters();
+        this.renderCharacters();
+    }
+
+    // Phase 2: Update filtered and sorted character list
+    updateFilteredCharacters() {
+        let filtered = [...this.characters];
+
+        // Apply search filter
+        if (this.searchQuery) {
+            filtered = filtered.filter(character => 
+                character.name.toLowerCase().includes(this.searchQuery)
+            );
+        }
+
+        // Apply sorting
+        switch (this.sortBy) {
+            case 'name':
+                filtered.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case 'recent':
+                filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                break;
+            case 'id':
+                filtered.sort((a, b) => b.id - a.id);
+                break;
+        }
+
+        this.filteredCharacters = filtered;
     }
 
     async handleAddCharacter(e) {
@@ -39,10 +96,7 @@ class CharactersComponent {
             const formData = new FormData(e.target);
             const name = validateCharacterName(formData.get('name'));
             
-            // Check if we already have 10 characters (max limit)
-            if (this.characters.length >= 10) {
-                throw new Error('Maximum of 10 characters allowed');
-            }
+            // Phase 2: Removed 10 character limit for scalability
             
             // Check for duplicate names (case-insensitive)
             const duplicateName = this.characters.find(c => 
@@ -55,12 +109,24 @@ class CharactersComponent {
             const character = await api.addCharacter(name);
             this.characters.push(character);
             
+            // Update filtered list and render
+            this.updateFilteredCharacters();
             this.renderCharacters();
             this.closeAddCharacterModal();
             
             // Also refresh the runs tab character cards if visible
             if (window.runsComponent && document.getElementById('runs-tab').classList.contains('active')) {
                 await window.runsComponent.renderCharacterCards();
+            }
+
+            // Refresh any active search components
+            if (window.characterSearchComponent) {
+                const activeSearches = document.querySelectorAll('.character-search-input');
+                activeSearches.forEach(input => {
+                    if (input.value.trim()) {
+                        characterSearchComponent.refreshResults(input.dataset.searchId);
+                    }
+                });
             }
             
             showNotification('success', `Character "${name}" added successfully`);
@@ -82,11 +148,23 @@ class CharactersComponent {
             await api.deleteCharacter(id);
             this.characters = this.characters.filter(c => c.id !== id);
             
+            // Update filtered list and render
+            this.updateFilteredCharacters();
             this.renderCharacters();
             
             // Also refresh the runs tab character cards if visible
             if (window.runsComponent && document.getElementById('runs-tab').classList.contains('active')) {
                 await window.runsComponent.renderCharacterCards();
+            }
+
+            // Refresh any active search components
+            if (window.characterSearchComponent) {
+                const activeSearches = document.querySelectorAll('.character-search-input');
+                activeSearches.forEach(input => {
+                    if (input.value.trim()) {
+                        characterSearchComponent.refreshResults(input.dataset.searchId);
+                    }
+                });
             }
             
             showNotification('success', `Character "${name}" deleted successfully`);
@@ -101,29 +179,47 @@ class CharactersComponent {
         const grid = document.getElementById('charactersGrid');
         if (!grid) return;
         
-        if (this.characters.length === 0) {
-            grid.innerHTML = `
-                <div class="character-card empty-state">
-                    <div class="character-name">No Characters Yet</div>
-                    <div class="character-stats">Click "Add Character" to get started</div>
-                    <div class="character-stats">You can add up to 10 characters</div>
-                </div>
-            `;
+        const displayCharacters = this.filteredCharacters;
+        
+        if (displayCharacters.length === 0) {
+            if (this.searchQuery) {
+                grid.innerHTML = `
+                    <div class="character-card empty-state">
+                        <div class="character-name">No Characters Found</div>
+                        <div class="character-stats">No characters match "${this.searchQuery}"</div>
+                        <div class="character-stats">Try a different search term</div>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = `
+                    <div class="character-card empty-state">
+                        <div class="character-name">No Characters Yet</div>
+                        <div class="character-stats">Click "Add Character" to get started</div>
+                        <div class="character-stats">You can now add unlimited characters</div>
+                    </div>
+                `;
+            }
+            
+            this.updateCharacterCount();
             return;
         }
         
-        // Sort characters alphabetically for display
-        const sortedCharacters = [...this.characters].sort((a, b) => 
-            a.name.localeCompare(b.name)
-        );
-        
-        grid.innerHTML = sortedCharacters.map(character => {
+        grid.innerHTML = displayCharacters.map(character => {
             const createdDate = new Date(character.created_at);
             const isRecentlyAdded = (Date.now() - createdDate.getTime()) < 300000; // 5 minutes
+            
+            // Phase 2: Show party status if character is in any party
+            const partyStatus = this.getCharacterPartyStatus(character.id);
+            const partyIndicator = partyStatus ? `
+                <div class="character-party-status">
+                    <span class="party-badge party-${partyStatus}">Party ${partyStatus}</span>
+                </div>
+            ` : '';
             
             return `
                 <div class="character-card ${isRecentlyAdded ? 'recently-added' : ''}">
                     <div class="character-name">${character.name}</div>
+                    ${partyIndicator}
                     <div class="character-stats">
                         <div class="stat-row">
                             <span>Added:</span>
@@ -148,21 +244,46 @@ class CharactersComponent {
         this.updateCharacterCount();
     }
 
-    updateCharacterCount() {
-        const maxCharacters = 10;
-        const currentCount = this.characters.length;
+    // Phase 2: Get character's current party status
+    getCharacterPartyStatus(characterId) {
+        if (!window.app || !window.app.components.runs) {
+            return null;
+        }
+
+        const runComponent = window.app.components.runs;
         
-        // Update add button state
+        // Check each party for this character
+        for (let partyNum = 1; partyNum <= 3; partyNum++) {
+            const party = runComponent.parties[partyNum];
+            if (party && party.participants.includes(characterId)) {
+                return partyNum;
+            }
+        }
+        
+        return null;
+    }
+
+    updateCharacterCount() {
+        const totalCount = this.characters.length;
+        const displayedCount = this.filteredCharacters.length;
+        
+        // Update add button (Phase 2: No more limit)
         const addButton = document.querySelector('[onclick="openAddCharacterModal()"]');
         if (addButton) {
-            if (currentCount >= maxCharacters) {
-                addButton.disabled = true;
-                addButton.textContent = `Max Characters (${currentCount}/${maxCharacters})`;
-                addButton.classList.add('btn-disabled');
+            if (this.searchQuery && displayedCount < totalCount) {
+                addButton.textContent = `Add Character (${displayedCount}/${totalCount} shown)`;
             } else {
-                addButton.disabled = false;
-                addButton.textContent = `Add Character (${currentCount}/${maxCharacters})`;
-                addButton.classList.remove('btn-disabled');
+                addButton.textContent = `Add Character (${totalCount} total)`;
+            }
+        }
+
+        // Update character count display
+        const countDisplay = document.getElementById('characterCountDisplay');
+        if (countDisplay) {
+            if (this.searchQuery && displayedCount < totalCount) {
+                countDisplay.textContent = `Showing ${displayedCount} of ${totalCount} characters`;
+            } else {
+                countDisplay.textContent = `${totalCount} character${totalCount !== 1 ? 's' : ''}`;
             }
         }
     }
@@ -185,11 +306,6 @@ class CharactersComponent {
     }
 
     openAddCharacterModal() {
-        if (this.characters.length >= 10) {
-            showNotification('warning', 'Maximum of 10 characters allowed');
-            return;
-        }
-        
         const modal = document.getElementById('addCharacterModal');
         if (modal) {
             modal.classList.remove('hidden');
@@ -264,6 +380,29 @@ class CharactersComponent {
         showNotification('success', 'Characters refreshed');
     }
 
+    // Phase 2: Clear search and show all characters
+    clearCharacterSearch() {
+        const searchInput = document.getElementById('characterSearchInput');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        this.searchQuery = '';
+        this.updateFilteredCharacters();
+        this.renderCharacters();
+    }
+
+    // Phase 2: Filter characters by party
+    filterByParty(partyNumber) {
+        const filtered = partyNumber === 'all' ? 
+            [...this.characters] : 
+            this.characters.filter(character => 
+                this.getCharacterPartyStatus(character.id) === partyNumber
+            );
+        
+        this.filteredCharacters = filtered;
+        this.renderCharacters();
+    }
+
     // Get character name by ID (utility function)
     getCharacterName(id) {
         const character = this.characters.find(c => c.id === id);
@@ -273,6 +412,50 @@ class CharactersComponent {
     // Get all character names (utility function)
     getAllCharacterNames() {
         return this.characters.map(c => c.name);
+    }
+
+    // Phase 2: Search integration methods
+    
+    // Get characters available for a specific party (excludes characters in other parties)
+    getAvailableCharactersForParty(partyNumber) {
+        return this.characters.filter(character => {
+            const currentParty = this.getCharacterPartyStatus(character.id);
+            return currentParty === null || currentParty === partyNumber;
+        });
+    }
+
+    // Get characters by search query (for external use)
+    async searchCharacters(query, limit = 20) {
+        if (query.length < 2) return [];
+        
+        try {
+            const results = await api.searchCharacters(query, limit);
+            return results;
+        } catch (error) {
+            console.error('Character search failed:', error);
+            return [];
+        }
+    }
+
+    // Get recently active characters (for Phase 3 enhancement)
+    getRecentlyActiveCharacters(limit = 10) {
+        // For now, return recently added characters
+        // In Phase 3, this could include last participation date from runs
+        return [...this.characters]
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, limit);
+    }
+
+    // Check if character exists by name
+    characterExists(name) {
+        return this.characters.some(c => 
+            c.name.toLowerCase() === name.toLowerCase()
+        );
+    }
+
+    // Get character by ID
+    getCharacterById(id) {
+        return this.characters.find(c => c.id === id);
     }
 }
 
@@ -294,6 +477,15 @@ function closeModal(modalId) {
             modal.classList.add('hidden');
         }
     }
+}
+
+// Phase 2: Global functions for new search functionality
+function clearCharacterSearch() {
+    charactersComponent.clearCharacterSearch();
+}
+
+function filterCharactersByParty(partyNumber) {
+    charactersComponent.filterByParty(partyNumber);
 }
 
 // Export for use in other modules

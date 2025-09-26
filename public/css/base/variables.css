@@ -1,0 +1,72 @@
+/* css/base/variables.css - CSS Custom Properties */
+
+:root {
+    /* Colors */
+    --primary-dark: #0a0a0a;
+    --secondary-dark: #1a1a1a;
+    --card-bg: #2a2a2a;
+    --card-hover: #353535;
+    --border-color: #444444;
+    --text-light: #f0f0f0;
+    --text-muted: #999999;
+    --accent-gold: #ffd700;
+    --uo-blue: #4a90e2;
+    --success-color: #00d48a;
+    
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, #ffd700, #ffed4e);
+    --gradient-blue: linear-gradient(135deg, #4a90e2, #357abd);
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    
+    /* Typography */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    
+    /* Border Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-full: 50%;
+    
+    /* Shadows */
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --shadow-hover: 0 10px 25px rgba(255, 215, 0, 0.2);
+    --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.4);
+    --shadow-modal: 0 25px 50px rgba(0, 0, 0, 0.6);
+    
+    /* Transitions */
+    --transition-normal: all 0.2s ease;
+    
+    /* Z-index */
+    --z-sticky: 100;
+    --z-modal: 1000;
+    
+    /* Layout */
+    --header-height: 80px;
+    --container-max-width: 1200px;
+    
+    /* Animations */
+    --animation-spin: spin 1s linear infinite;
+}

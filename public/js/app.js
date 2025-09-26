@@ -77,6 +77,24 @@ class ShadowguardApp {
                         break;
                 }
             }
+
+            // Party switching shortcuts (Alt + 1,2,3) when on runs tab
+            if (e.altKey && !e.ctrlKey && !e.metaKey && this.currentTab === 'runs') {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        switchParty(1);
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        switchParty(2);
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        switchParty(3);
+                        break;
+                }
+            }
         });
         
         // Modal click-outside-to-close
@@ -149,7 +167,8 @@ class ShadowguardApp {
                     break;
                     
                 case 'runs':
-                    // Render character cards for run interface
+                    // Initialize party tabs and render character cards for run interface
+                    await this.components.runs.initializePartyTabs();
                     await this.components.runs.renderCharacterCards();
                     break;
                     
@@ -233,10 +252,11 @@ class ShadowguardApp {
     getAppState() {
         return {
             currentTab: this.currentTab,
-            characters: this.components.characters.characters,
-            runState: this.components.runs.currentRunState,
-            analyticsData: this.components.analytics.analyticsData,
-            lastRefresh: this.components.analytics.lastRefresh
+            currentParty: this.components.runs?.currentParty,
+            characters: this.components.characters?.characters,
+            parties: this.components.runs?.parties,
+            analyticsData: this.components.analytics?.analyticsData,
+            lastRefresh: this.components.analytics?.lastRefresh
         };
     }
 
@@ -264,7 +284,7 @@ class ShadowguardApp {
 
     // Data validation helpers
     validateRunState() {
-        const runState = this.components.runs.currentRunState;
+        const runState = this.components.runs.getCurrentPartyState();
         
         if (runState.participants.length === 0) {
             throw new Error('At least one participant is required');
@@ -283,8 +303,9 @@ class ShadowguardApp {
             const exportData = {
                 exportDate: new Date().toISOString(),
                 characters: this.components.characters.characters,
+                parties: this.components.runs.parties,
                 analytics: this.components.analytics.analyticsData,
-                version: '1.0'
+                version: '2.0'
             };
             
             const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -311,6 +332,24 @@ class ShadowguardApp {
 function showTab(tabName) {
     if (window.app) {
         app.showTab(tabName);
+    }
+}
+
+function switchParty(partyNumber) {
+    if (window.app && window.app.components.runs) {
+        app.components.runs.switchParty(partyNumber);
+    }
+}
+
+function filterRunHistory() {
+    if (window.app && window.app.components.runs) {
+        app.components.runs.filterRunHistory();
+    }
+}
+
+function filterAnalytics() {
+    if (window.app && window.app.components.analytics) {
+        app.components.analytics.filterByParty();
     }
 }
 

@@ -17,7 +17,17 @@ function formatDateTime(dateString) {
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
-        minute: '2-digit'
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
     });
 }
 
@@ -63,6 +73,62 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function slugify(text) {
+    return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-');
+}
+
+// Search utilities
+function fuzzySearch(query, items, searchFields = ['name']) {
+    if (!query || query.length < 2) return items;
+    
+    const lowerQuery = query.toLowerCase();
+    
+    return items.filter(item => {
+        return searchFields.some(field => {
+            const value = item[field];
+            if (!value) return false;
+            
+            const lowerValue = value.toString().toLowerCase();
+            
+            // Exact match (highest priority)
+            if (lowerValue === lowerQuery) return true;
+            
+            // Starts with query (high priority)
+            if (lowerValue.startsWith(lowerQuery)) return true;
+            
+            // Contains query (medium priority)
+            if (lowerValue.includes(lowerQuery)) return true;
+            
+            // Fuzzy match - check if all query characters exist in order
+            let queryIndex = 0;
+            for (let i = 0; i < lowerValue.length && queryIndex < lowerQuery.length; i++) {
+                if (lowerValue[i] === lowerQuery[queryIndex]) {
+                    queryIndex++;
+                }
+            }
+            
+            return queryIndex === lowerQuery.length;
+        });
+    });
+}
+
+function highlightText(text, query) {
+    if (!query || !text) return text;
+    
+    const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
+
+function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Array utilities
 function groupBy(array, key) {
     return array.reduce((groups, item) => {
@@ -85,6 +151,80 @@ function sortBy(array, key, direction = 'asc') {
         }
         return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
     });
+}
+
+function unique(array, key = null) {
+    if (!key) {
+        return [...new Set(array)];
+    }
+    
+    const seen = new Set();
+    return array.filter(item => {
+        const keyValue = typeof key === 'function' ? key(item) : item[key];
+        if (seen.has(keyValue)) {
+            return false;
+        }
+        seen.add(keyValue);
+        return true;
+    });
+}
+
+// Multi-party specific utilities
+function getPartyDisplayName(partyNumber) {
+    const party = parseInt(partyNumber);
+    if (isNaN(party) || party < 1 || party > 3) {
+        return 'Unknown Party';
+    }
+    return `Party ${party}`;
+}
+
+function validatePartyNumber(partyNumber) {
+    const party = parseInt(partyNumber);
+    if (isNaN(party) || party < 1 || party > 3) {
+        return 1; // Default to Party 1
+    }
+    return party;
+}
+
+function getPartyColor(partyNumber) {
+    const colors = {
+        1: '#4a90e2', // Blue
+        2: '#5cb85c', // Green  
+        3: '#f0ad4e'  // Orange
+    };
+    return colors[partyNumber] || colors[1];
+}
+
+function getPartyIcon(partyNumber) {
+    const icons = {
+        1: '①',
+        2: '②',
+        3: '③'
+    };
+    return icons[partyNumber] || icons[1];
+}
+
+function formatPartyStats(partyData) {
+    if (!partyData) return 'No data';
+    
+    const { participants = 0, drops = 0, runs = 0 } = partyData;
+    const parts = [];
+    
+    if (participants > 0) parts.push(`${participants} participant${participants !== 1 ? 's' : ''}`);
+    if (drops > 0) parts.push(`${drops} drop${drops !== 1 ? 's' : ''}`);
+    if (runs > 0) parts.push(`${runs} run${runs !== 1 ? 's' : ''}`);
+    
+    return parts.length > 0 ? parts.join(', ') : 'No activity';
+}
+
+function isCharacterInParty(characterId, parties, excludeParty = null) {
+    for (let partyNum = 1; partyNum <= 3; partyNum++) {
+        if (excludeParty && partyNum === excludeParty) continue;
+        if (parties[partyNum] && parties[partyNum].participants.includes(characterId)) {
+            return partyNum;
+        }
+    }
+    return false;
 }
 
 // DOM utilities
@@ -117,6 +257,16 @@ function createElement(tag, attributes = {}, children = []) {
 function clearElement(element) {
     while (element.firstChild) {
         element.removeChild(element.firstChild);
+    }
+}
+
+function toggleClass(element, className, force = null) {
+    if (force === true) {
+        element.classList.add(className);
+    } else if (force === false) {
+        element.classList.remove(className);
+    } else {
+        element.classList.toggle(className);
     }
 }
 
@@ -223,6 +373,23 @@ function calculateTrends(data, dateField, valueField, periods = 7) {
     }));
 }
 
+function calculatePartyComparison(partyStats) {
+    const parties = [1, 2, 3];
+    const comparison = {};
+    
+    parties.forEach(partyNum => {
+        const stats = partyStats[`party${partyNum}`] || {};
+        comparison[partyNum] = {
+            runs: stats.total_runs || 0,
+            drops: stats.total_drops || 0,
+            dropRate: calculateDropRate(stats.total_drops || 0, stats.total_runs || 0),
+            avgParticipants: stats.avg_participants || 0
+        };
+    });
+    
+    return comparison;
+}
+
 // Form utilities
 function validateForm(formElement) {
     const requiredFields = formElement.querySelectorAll('[required]');
@@ -259,18 +426,77 @@ function getFormData(formElement) {
     return data;
 }
 
+function resetForm(formElement) {
+    formElement.reset();
+    
+    // Remove error classes
+    const errorFields = formElement.querySelectorAll('.error');
+    errorFields.forEach(field => field.classList.remove('error'));
+    
+    // Reset custom states
+    const customResets = formElement.querySelectorAll('[data-reset]');
+    customResets.forEach(element => {
+        const resetValue = element.getAttribute('data-reset');
+        if (resetValue === 'empty') {
+            element.value = '';
+        } else if (resetValue === 'placeholder') {
+            element.value = element.getAttribute('placeholder') || '';
+        }
+    });
+}
+
+// Debounce utility for search
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Throttle utility for performance
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
 // Export utilities to global scope
 window.formatDate = formatDate;
 window.formatDateTime = formatDateTime;
+window.formatTime = formatTime;
 window.formatRelativeTime = formatRelativeTime;
 window.formatNumber = formatNumber;
 window.formatPercentage = formatPercentage;
 window.truncateText = truncateText;
 window.capitalizeFirst = capitalizeFirst;
+window.slugify = slugify;
+window.fuzzySearch = fuzzySearch;
+window.highlightText = highlightText;
+window.escapeRegExp = escapeRegExp;
 window.groupBy = groupBy;
 window.sortBy = sortBy;
+window.unique = unique;
+window.getPartyDisplayName = getPartyDisplayName;
+window.validatePartyNumber = validatePartyNumber;
+window.getPartyColor = getPartyColor;
+window.getPartyIcon = getPartyIcon;
+window.formatPartyStats = formatPartyStats;
+window.isCharacterInParty = isCharacterInParty;
 window.createElement = createElement;
 window.clearElement = clearElement;
+window.toggleClass = toggleClass;
 window.saveToStorage = saveToStorage;
 window.loadFromStorage = loadFromStorage;
 window.removeFromStorage = removeFromStorage;
@@ -278,5 +504,9 @@ window.calculateDropRate = calculateDropRate;
 window.calculateSuccessRate = calculateSuccessRate;
 window.findTopPerformers = findTopPerformers;
 window.calculateTrends = calculateTrends;
+window.calculatePartyComparison = calculatePartyComparison;
 window.validateForm = validateForm;
 window.getFormData = getFormData;
+window.resetForm = resetForm;
+window.debounce = debounce;
+window.throttle = throttle;

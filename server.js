@@ -29,6 +29,22 @@ app.get('/api/characters', async (req, res) => {
     }
 });
 
+// Character search route (for Phase 2)
+app.get('/api/characters/search', async (req, res) => {
+    try {
+        const { q: query, limit = 10 } = req.query;
+        
+        if (!query || query.length < 3) {
+            return res.json([]);
+        }
+        
+        const characters = await db.searchCharacters(query, parseInt(limit));
+        res.json(characters);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/api/characters', async (req, res) => {
     try {
         const { name } = req.body;
@@ -59,11 +75,13 @@ app.delete('/api/characters/:id', async (req, res) => {
     }
 });
 
-// Run routes
+// Run routes - Updated for multi-party support
 app.get('/api/runs', async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 50;
-        const runs = await db.getRuns(limit);
+        const party = req.query.party;
+        
+        const runs = await db.getRuns(limit, party);
         res.json(runs);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -72,7 +90,7 @@ app.get('/api/runs', async (req, res) => {
 
 app.post('/api/runs', async (req, res) => {
     try {
-        const { date, participantIds, success, notes } = req.body;
+        const { date, participantIds, success, notes, partyNumber } = req.body;
         
         if (!date || !participantIds || !Array.isArray(participantIds) || participantIds.length === 0) {
             return res.status(400).json({ 
@@ -80,8 +98,16 @@ app.post('/api/runs', async (req, res) => {
             });
         }
 
+        // Validate party number
+        const party = parseInt(partyNumber) || 1;
+        if (party < 1 || party > 3) {
+            return res.status(400).json({ 
+                error: 'Party number must be 1, 2, or 3' 
+            });
+        }
+
         const participantCount = participantIds.length;
-        const run = await db.addRun(date, participantCount, success || true, participantIds, notes);
+        const run = await db.addRun(date, participantCount, success || true, participantIds, notes, party);
         res.status(201).json(run);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -116,9 +142,12 @@ app.get('/api/items', async (req, res) => {
     }
 });
 
-// Analytics routes
+// Analytics routes - Updated for multi-party support
+// CRITICAL FIX: Character stats endpoint should NEVER accept party parameter
+// Character performance must aggregate across ALL parties
 app.get('/api/analytics/character-stats', async (req, res) => {
     try {
+        // NO party parameter - always get stats across all parties
         const stats = await db.getCharacterDropStats();
         res.json(stats);
     } catch (error) {
@@ -128,7 +157,8 @@ app.get('/api/analytics/character-stats', async (req, res) => {
 
 app.get('/api/analytics/item-rates', async (req, res) => {
     try {
-        const rates = await db.getItemDropRates();
+        const party = req.query.party;
+        const rates = await db.getItemDropRates(party);
         res.json(rates);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -137,7 +167,8 @@ app.get('/api/analytics/item-rates', async (req, res) => {
 
 app.get('/api/analytics/recent-activity', async (req, res) => {
     try {
-        const activity = await db.getRecentActivity();
+        const party = req.query.party;
+        const activity = await db.getRecentActivity(party);
         res.json(activity);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -146,8 +177,64 @@ app.get('/api/analytics/recent-activity', async (req, res) => {
 
 app.get('/api/analytics/overview', async (req, res) => {
     try {
-        const overview = await db.getOverallStats();
+        const party = req.query.party;
+        const overview = await db.getOverallStats(party);
         res.json(overview);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Multi-party specific routes
+app.get('/api/analytics/party-comparison', async (req, res) => {
+    try {
+        const partyStats = await db.getPartyComparison();
+        res.json(partyStats);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get('/api/runs/party/:partyNumber', async (req, res) => {
+    try {
+        const { partyNumber } = req.params;
+        const party = parseInt(partyNumber);
+        
+        if (party < 1 || party > 3) {
+            return res.status(400).json({ error: 'Party number must be 1, 2, or 3' });
+        }
+        
+        const limit = parseInt(req.query.limit) || 50;
+        const runs = await db.getRuns(limit, party);
+        res.json(runs);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Utility routes
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        version: '2.0.0' // Updated version for multi-party support
+    });
+});
+
+app.get('/api/stats/summary', async (req, res) => {
+    try {
+        const [overview, characterCount, runCount] = await Promise.all([
+            db.getOverallStats(),
+            db.getCharacters(),
+            db.getRuns(1) // Just get count
+        ]);
+        
+        res.json({
+            totalCharacters: characterCount.length,
+            totalRuns: overview.total_runs || 0,
+            totalDrops: overview.total_drops || 0,
+            lastUpdated: new Date().toISOString()
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -155,30 +242,63 @@ app.get('/api/analytics/overview', async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
+    console.error('Error:', err.stack);
+    
+    // Log additional context for debugging
+    console.error('Request details:', {
+        method: req.method,
+        url: req.url,
+        body: req.body,
+        query: req.query,
+        params: req.params
+    });
+    
+    res.status(500).json({ 
+        error: 'Something went wrong!',
+        ...(process.env.NODE_ENV === 'development' && { details: err.message })
+    });
 });
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
+    res.status(404).json({ 
+        error: 'Route not found',
+        path: req.path,
+        method: req.method
+    });
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
-    console.log('\nShutting down gracefully...');
-    db.close();
+const gracefulShutdown = (signal) => {
+    console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+    
+    // Close database connection
+    if (db) {
+        db.close();
+    }
+    
+    // Close server
     process.exit(0);
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    gracefulShutdown('uncaughtException');
 });
 
-process.on('SIGTERM', () => {
-    console.log('\nShutting down gracefully...');
-    db.close();
-    process.exit(0);
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    gracefulShutdown('unhandledRejection');
 });
 
 app.listen(PORT, () => {
-    console.log(`Shadowguard Drop Tracker running on http://localhost:${PORT}`);
+    console.log(`Shadowguard Drop Tracker v2.0 running on http://localhost:${PORT}`);
+    console.log('Multi-party support enabled');
+    console.log('Press Ctrl+C to stop server');
 });
 
 module.exports = app;

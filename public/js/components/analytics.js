@@ -8,6 +8,7 @@ class AnalyticsComponent {
             recentActivity: []
         };
         this.lastRefresh = null;
+        this.currentPartyFilter = 'all'; // Track current party filter
     }
 
     async init() {
@@ -18,17 +19,67 @@ class AnalyticsComponent {
         }
     }
 
-    async loadAnalytics() {
+    async loadAnalytics(partyNumber = null) {
         try {
             showLoading(true);
-            this.analyticsData = await api.getAllAnalytics();
+            
+            // Use the party filter if provided, otherwise use current filter
+            const filterParty = partyNumber !== null ? partyNumber : this.currentPartyFilter;
+            
+            // CRITICAL FIX: Character stats should NEVER be filtered by party
+            // They should aggregate across ALL parties
+            const [overview, characterStats, itemRates, recentActivity] = await Promise.all([
+                api.getOverviewStats(filterParty === 'all' ? null : filterParty),
+                api.getCharacterStats(), // NO party parameter - always get all parties
+                api.getItemDropRates(filterParty === 'all' ? null : filterParty),
+                api.getRecentActivity(filterParty === 'all' ? null : filterParty)
+            ]);
+
+            this.analyticsData = {
+                overview,
+                characterStats,
+                itemRates,
+                recentActivity
+            };
+            
+            this.analyticsData.partyFilter = filterParty; // Store the filter used
             this.lastRefresh = new Date();
+            
             this.renderAllAnalytics();
+            
+            // Update the filter display
+            this.updateFilterDisplay();
+            
         } catch (error) {
             console.error('Failed to load analytics:', error);
             this.renderError('Failed to load analytics data');
         } finally {
             showLoading(false);
+        }
+    }
+
+    // Handle party filter change from dropdown
+    async filterByParty() {
+        const filterSelect = document.getElementById('analyticsPartyFilter');
+        if (!filterSelect) return;
+
+        const selectedParty = filterSelect.value;
+        this.currentPartyFilter = selectedParty;
+        
+        // Reload analytics with new filter
+        await this.loadAnalytics(selectedParty);
+        
+        showNotification('success', 
+            selectedParty === 'all' 
+                ? 'Showing analytics for all parties' 
+                : `Showing analytics for Party ${selectedParty}`
+        );
+    }
+
+    updateFilterDisplay() {
+        const filterSelect = document.getElementById('analyticsPartyFilter');
+        if (filterSelect && this.currentPartyFilter) {
+            filterSelect.value = this.currentPartyFilter;
         }
     }
 
@@ -44,6 +95,7 @@ class AnalyticsComponent {
         if (!container) return;
 
         const stats = this.analyticsData.overview || {};
+        const partyFilter = this.analyticsData.partyFilter;
         
         const successRate = stats.total_runs ? 
             Math.round((stats.successful_runs / stats.total_runs) * 100) : 0;
@@ -54,34 +106,37 @@ class AnalyticsComponent {
         const participationRate = stats.total_characters && stats.total_runs ? 
             (stats.avg_participants / stats.total_characters * 100).toFixed(1) : 0;
 
+        // Add party context to titles when filtered
+        const partyContext = partyFilter && partyFilter !== 'all' ? ` (Party ${partyFilter})` : '';
+
         container.innerHTML = `
             <div class="stat-card">
-                <h3>Total Characters</h3>
+                <h3>Total Characters${partyContext}</h3>
                 <div class="stat-value">${formatNumber(stats.total_characters || 0)}</div>
             </div>
             
             <div class="stat-card">
-                <h3>Total Runs</h3>
+                <h3>Total Runs${partyContext}</h3>
                 <div class="stat-value">${formatNumber(stats.total_runs || 0)}</div>
             </div>
             
             <div class="stat-card">
-                <h3>Total Drops</h3>
+                <h3>Total Drops${partyContext}</h3>
                 <div class="stat-value">${formatNumber(stats.total_drops || 0)}</div>
             </div>
             
             <div class="stat-card">
-                <h3>Drops per Run</h3>
+                <h3>Drops per Run${partyContext}</h3>
                 <div class="stat-value">${dropsPerRun}</div>
             </div>
             
             <div class="stat-card">
-                <h3>Avg Participants</h3>
+                <h3>Avg Participants${partyContext}</h3>
                 <div class="stat-value">${stats.avg_participants || 0}</div>
             </div>
             
             <div class="stat-card">
-                <h3>Drop Rate</h3>
+                <h3>Drop Rate${partyContext}</h3>
                 <div class="stat-value">${stats.total_runs ? ((stats.total_drops / stats.total_runs) * 100).toFixed(1) : 0}%</div>
             </div>
         `;
@@ -92,9 +147,10 @@ class AnalyticsComponent {
         if (!container) return;
 
         const stats = this.analyticsData.characterStats || [];
+        const partyFilter = this.analyticsData.partyFilter;
         
         if (stats.length === 0) {
-            container.innerHTML = '<p class="text-muted">No character statistics available yet.</p>';
+            container.innerHTML = `<p class="text-muted">No character statistics available yet.</p>`;
             return;
         }
         
@@ -106,7 +162,15 @@ class AnalyticsComponent {
             return a.character_name.localeCompare(b.character_name);
         });
         
-        container.innerHTML = sortedStats.map(stat => {
+        // Add party filter notice for character stats
+        const partyNotice = partyFilter && partyFilter !== 'all' 
+            ? `<div class="character-stats-notice">
+                <i>Note: Character statistics always show performance across ALL parties. 
+                Party filter affects run organization only.</i>
+               </div>` 
+            : '';
+        
+        container.innerHTML = partyNotice + sortedStats.map(stat => {
             const participationRate = stat.total_runs_participated > 0 ? 
                 Math.round((stat.runs_with_drops / stat.total_runs_participated) * 100) : 0;
             const dropsPerRun = stat.total_runs_participated > 0 ? 
@@ -125,6 +189,13 @@ class AnalyticsComponent {
             else if (dropRatePercentage >= 5) performanceClass = 'improving';
             else if (totalRuns >= 10) performanceClass = 'struggling';
             else performanceClass = 'new'; // For characters with insufficient data
+
+            // Show party info if character participated in multiple parties
+            const partyInfo = stat.parties_participated ? 
+                `<div class="stat-detail-item">
+                    <span class="stat-detail-label">Parties:</span>
+                    <span class="stat-detail-value">${stat.parties_participated}</span>
+                </div>` : '';
                 
             return `
                 <div class="character-stat-card performance-${performanceClass}">
@@ -150,6 +221,7 @@ class AnalyticsComponent {
                             <span class="stat-detail-label">Total Runs:</span>
                             <span class="stat-detail-value">${totalRuns}</span>
                         </div>
+                        ${partyInfo}
                         ${performanceLabel ? `
                         <div class="stat-detail-item">
                             <span class="stat-detail-label">Performance:</span>
@@ -183,9 +255,13 @@ class AnalyticsComponent {
         if (!container) return;
 
         const rates = this.analyticsData.itemRates || [];
+        const partyFilter = this.analyticsData.partyFilter;
         
         if (rates.length === 0) {
-            container.innerHTML = '<p class="text-muted">No item drop data available yet.</p>';
+            const message = partyFilter && partyFilter !== 'all' 
+                ? `No item drop data available for Party ${partyFilter} yet.`
+                : 'No item drop data available yet.';
+            container.innerHTML = `<p class="text-muted">${message}</p>`;
             return;
         }
         
@@ -211,9 +287,11 @@ class AnalyticsComponent {
             const avgCameoRate = groupedRates.cameo.length > 0 ? 
                 (groupedRates.cameo.reduce((sum, item) => sum + (item.drop_rate_percentage || 0), 0) / groupedRates.cameo.length).toFixed(1) : 0;
             
+            const partyContext = partyFilter && partyFilter !== 'all' ? ` (Party ${partyFilter})` : '';
+            
             html += `
                 <div class="cameo-section">
-                    <h4>Enchantress' Cameo Variants</h4>
+                    <h4>Enchantress' Cameo Variants${partyContext}</h4>
                     <div class="cameo-summary">
                         <span class="cameo-stat">${totalCameoDrops} total drops</span>
                         <span class="cameo-stat">${avgCameoRate}% average rate</span>
@@ -227,7 +305,10 @@ class AnalyticsComponent {
         }
         
         if (html === '') {
-            html = '<p class="text-muted">No item drop data available yet.</p>';
+            const message = partyFilter && partyFilter !== 'all' 
+                ? `No item drop data available for Party ${partyFilter} yet.`
+                : 'No item drop data available yet.';
+            html = `<p class="text-muted">${message}</p>`;
         }
         
         container.innerHTML = html;
@@ -309,9 +390,13 @@ class AnalyticsComponent {
         if (!container) return;
 
         const activity = this.analyticsData.recentActivity || [];
+        const partyFilter = this.analyticsData.partyFilter;
         
         if (activity.length === 0) {
-            container.innerHTML = '<p class="text-muted">No recent activity to display.</p>';
+            const message = partyFilter && partyFilter !== 'all' 
+                ? `No recent activity for Party ${partyFilter} to display.`
+                : 'No recent activity to display.';
+            container.innerHTML = `<p class="text-muted">${message}</p>`;
             return;
         }
         
@@ -319,12 +404,14 @@ class AnalyticsComponent {
             const hasDrops = item.total_drops > 0;
             const runDate = new Date(item.date);
             const isRecent = (Date.now() - runDate.getTime()) < 86400000; // 24 hours
+            const partyNumber = item.party_number || 1; // Default to Party 1 for backward compatibility
             
             return `
                 <div class="recent-activity-item ${hasDrops ? 'has-drops' : 'no-drops'} ${isRecent ? 'recent' : ''}">
                     <div class="activity-info">
                         <div class="activity-description">
                             <span class="activity-date">${formatDateTime(item.date)}</span>
+                            <span class="activity-party">Party ${partyNumber}</span>
                             <span class="activity-participants">${item.participant_count} participants</span>
                             ${hasDrops ? 
                                 `<span class="activity-drops success">${item.total_drops} drops</span>` : 
@@ -395,8 +482,11 @@ class AnalyticsComponent {
 
     // Export analytics data (for future enhancements)
     exportAnalytics() {
+        const partyContext = this.currentPartyFilter !== 'all' ? `-party-${this.currentPartyFilter}` : '';
+        
         const exportData = {
             exported: new Date().toISOString(),
+            partyFilter: this.currentPartyFilter,
             overview: this.analyticsData.overview,
             characterStats: this.analyticsData.characterStats,
             itemRates: this.analyticsData.itemRates,
@@ -410,13 +500,56 @@ class AnalyticsComponent {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `shadowguard-analytics-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `shadowguard-analytics${partyContext}-${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showNotification('success', 'Analytics data exported');
+        const message = this.currentPartyFilter !== 'all' 
+            ? `Analytics data for Party ${this.currentPartyFilter} exported`
+            : 'Analytics data exported';
+        showNotification('success', message);
+    }
+
+    // Multi-party specific methods
+    async loadPartyComparison() {
+        try {
+            showLoading(true);
+            
+            const partyStats = await api.getPartyStats();
+            
+            // This could render a comparison view in the future
+            console.log('Party comparison data:', partyStats);
+            
+        } catch (error) {
+            console.error('Failed to load party comparison:', error);
+            showNotification('error', 'Failed to load party comparison data');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Get analytics summary for all parties (utility function)
+    async getAllPartySummary() {
+        try {
+            const [allParties, party1, party2, party3] = await Promise.all([
+                api.getAllAnalytics('all'),
+                api.getAllAnalytics(1),
+                api.getAllAnalytics(2),
+                api.getAllAnalytics(3)
+            ]);
+
+            return {
+                overall: allParties.overview,
+                party1: party1.overview,
+                party2: party2.overview,
+                party3: party3.overview
+            };
+        } catch (error) {
+            console.error('Failed to get party summary:', error);
+            return null;
+        }
     }
 }
 
@@ -426,6 +559,10 @@ const analyticsComponent = new AnalyticsComponent();
 // Global functions for HTML onclick handlers
 function refreshAnalytics() {
     analyticsComponent.refreshAnalytics();
+}
+
+function filterAnalytics() {
+    analyticsComponent.filterByParty();
 }
 
 // Export for use in other modules

@@ -1,0 +1,536 @@
+/* Responsive Design - Mobile-First Approach */
+
+/* Tablet styles (768px and below) */
+@media (max-width: 768px) {
+    /* Character Statistics */
+    .character-stat-details {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Drop Details */
+    .drop-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    /* Run Details */
+    .run-details {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .character-stat-details {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+
+    /* Activity Description */
+    .activity-description {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .cameo-summary {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .run-badges {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+
+    /* Activity Party Indicator */
+    .activity-party {
+        align-self: flex-start;
+    }
+    
+    /* Character Search */
+    .character-controls {
+        padding: var(--spacing-md);
+    }
+    
+    .character-filters {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-md);
+    }
+    
+    .filter-group {
+        justify-content: space-between;
+    }
+    
+    .filter-select {
+        min-width: auto;
+        flex: 1;
+        max-width: 200px;
+    }
+    
+    .search-input-group {
+        flex-direction: column;
+        align-items: stretch;
+        max-width: none;
+    }
+    
+    .character-search-results {
+        max-height: 250px;
+    }
+    
+    .character-count {
+        margin-left: 0;
+        text-align: center;
+        margin-top: var(--spacing-sm);
+    }
+
+    /* Date Input */
+    .date-input {
+        max-width: none;
+    }
+
+    /* Run Badges Layout */
+    .run-badges {
+        flex-wrap: wrap;
+        gap: var(--spacing-xs);
+    }
+
+    /* Recent Activity Items */
+    .recent-activity-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+}
+
+/* Mobile styles (480px and below) */
+@media (max-width: 480px) {
+    /* Prevent zoom on iOS form inputs */
+    .character-search-input,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="datetime-local"],
+    textarea,
+    select {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Search Results Optimization */
+    .result-character-info {
+        min-width: 0; /* Allow text truncation */
+    }
+    
+    .result-character-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .search-result-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    /* Enhanced mobile character card layout */
+    .character-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    /* Better mobile button spacing */
+    .character-actions {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+
+    /* Improved mobile stats display */
+    .character-stats-mini {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+
+    /* Mobile-optimized modal padding */
+    .modal-form {
+        padding: var(--spacing-md);
+    }
+
+    .modal-header {
+        padding: var(--spacing-md);
+    }
+
+    /* Mobile-friendly notification sizing */
+    .notification {
+        font-size: var(--font-size-xs);
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    /* Run card mobile layout */
+    .run-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+    }
+
+    /* Mobile activity items */
+    .recent-activity-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    /* Character stats mobile layout */
+    .character-stat-card {
+        padding: var(--spacing-md);
+    }
+
+    /* Mobile-optimized spacing for analytics sections */
+    .analytics-section {
+        padding: var(--spacing-md);
+    }
+
+    /* Drop item mobile layout */
+    .drop-item {
+        padding: var(--spacing-md);
+    }
+
+    /* Better mobile navigation */
+    .nav-buttons {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+
+    .btn {
+        font-size: var(--font-size-xs);
+        padding: 0.5rem 1rem;
+        min-height: 40px;
+    }
+
+    /* Mobile form improvements */
+    .form-group {
+        margin-bottom: var(--spacing-md);
+    }
+
+    /* Mobile checkbox group */
+    .checkbox-group {
+        gap: var(--spacing-xs);
+    }
+
+    /* Tab content mobile spacing */
+    .tab-content {
+        padding-top: var(--spacing-sm);
+    }
+
+    /* Mobile-friendly stat cards */
+    .stat-card {
+        padding: var(--spacing-md);
+    }
+
+    .stat-value {
+        font-size: var(--font-size-3xl);
+    }
+
+    /* Better mobile search clear button */
+    .search-clear {
+        width: 32px;
+        height: 32px;
+        right: 6px;
+    }
+
+    /* Mobile character selection optimization */
+    .participant-toggle {
+        width: 32px;
+        height: 32px;
+        font-size: var(--font-size-sm);
+    }
+
+    /* Mobile drop selection */
+    .drop-select {
+        padding: 0.6rem;
+        font-size: var(--font-size-sm);
+    }
+
+    /* Performance badge mobile sizing */
+    .performance-badge,
+    .performance-mini {
+        font-size: 10px;
+        padding: 0.15rem 0.4rem;
+    }
+
+    /* Rarity badge mobile sizing */
+    .rarity-badge {
+        font-size: 10px;
+        padding: 0.15rem 0.4rem;
+    }
+
+    /* Mobile party indicator */
+    .party-indicator {
+        font-size: 10px;
+        padding: 0.15rem 0.4rem;
+        top: -6px;
+        right: var(--spacing-sm);
+    }
+
+    /* Mobile activity details */
+    .activity-details {
+        font-size: var(--font-size-xs);
+    }
+
+    /* Mobile cameo variants spacing */
+    .cameo-variant {
+        padding: var(--spacing-md);
+    }
+
+    /* Mobile blessed indicator */
+    .blessed-indicator {
+        font-size: 10px;
+        padding: 0.15rem 0.4rem;
+        margin-left: var(--spacing-xs);
+    }
+
+    /* Better mobile error states */
+    .error-state {
+        padding: var(--spacing-lg);
+        font-size: var(--font-size-sm);
+    }
+
+    .no-characters-message {
+        padding: var(--spacing-lg);
+    }
+
+    /* Mobile loading spinner */
+    .loading-spinner .spinner {
+        width: 32px;
+        height: 32px;
+        border-width: 3px;
+    }
+
+    /* Run participants display */
+    .run-participants,
+    .run-drops-details {
+        font-size: var(--font-size-xs);
+    }
+
+    /* Mobile run badge sizing */
+    .run-badge {
+        font-size: 10px;
+        padding: 0.2rem 0.5rem;
+    }
+
+    /* Participant search section mobile */
+    .participant-search-section {
+        padding: var(--spacing-sm);
+    }
+
+    .participant-search-section h4 {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-sm);
+    }
+}
+
+/* Very small screens (320px and below) */
+@media (max-width: 320px) {
+    /* Ultra-compact spacing for very small screens */
+    .main-content {
+        padding: var(--spacing-sm);
+    }
+
+    .character-card,
+    .run-card,
+    .stat-card,
+    .drop-item {
+        padding: var(--spacing-sm);
+    }
+
+    .btn {
+        padding: 0.4rem 0.8rem;
+        font-size: var(--font-size-xs);
+    }
+
+    .app-title {
+        font-size: var(--font-size-2xl);
+    }
+
+    .header-content {
+        padding: 0 var(--spacing-sm);
+    }
+
+    /* Ultra-compact character cards */
+    .character-name {
+        font-size: var(--font-size-lg);
+    }
+
+    .character-stats {
+        font-size: var(--font-size-sm);
+    }
+
+    /* Ultra-compact modals */
+    .modal-content {
+        width: 98%;
+        margin: var(--spacing-xs);
+    }
+
+    /* Ultra-compact notifications */
+    .notification-container {
+        top: 5px;
+        right: 5px;
+        left: 5px;
+    }
+
+    /* Ultra-compact search */
+    .character-search-container {
+        max-width: 100%;
+    }
+
+    /* Ultra-compact party tabs */
+    .party-tab {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: var(--font-size-sm);
+    }
+
+    .party-tab-label {
+        font-size: var(--font-size-sm);
+    }
+
+    .party-tab-indicator {
+        font-size: 10px;
+    }
+}
+
+/* Large screen optimizations (1200px and above) */
+@media (min-width: 1200px) {
+    /* Larger grid columns for big screens */
+    .character-cards-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+
+    .characters-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+
+    .character-stats-list {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+
+    /* Better use of space on large screens */
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    /* Improved analytics layout for large screens */
+    .common-drops {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    }
+
+    /* Better modal sizing on large screens */
+    .modal-content {
+        max-width: 600px;
+    }
+
+    /* Enhanced search container for large screens */
+    .character-search-container {
+        max-width: 500px;
+    }
+
+    /* Better party tab spacing on large screens */
+    .party-tabs {
+        max-width: 800px;
+        margin: 0 auto var(--spacing-lg) auto;
+    }
+}
+
+/* Ultra-wide screen optimizations (1600px and above) */
+@media (min-width: 1600px) {
+    /* Prevent excessive stretching on ultra-wide screens */
+    .main-content {
+        max-width: 1400px;
+    }
+
+    .character-cards-grid,
+    .characters-grid {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+}
+
+/* High DPI / Retina display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Sharper borders and shadows on high-DPI displays */
+    .card-border,
+    .character-card,
+    .run-card,
+    .stat-card,
+    .drop-item {
+        border-width: 1px;
+    }
+
+    /* Optimize animations for high refresh rate displays */
+    @media (prefers-reduced-motion: no-preference) {
+        * {
+            transition-duration: 0.15s;
+        }
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .loading-spinner .spinner {
+        animation: none;
+        border-top-color: var(--accent-gold);
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #666666;
+        --text-muted: #cccccc;
+    }
+
+    .btn,
+    .character-card,
+    .run-card,
+    .stat-card {
+        border-width: 2px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .header,
+    .nav-buttons,
+    .btn,
+    .modal,
+    .notification-container,
+    .party-tabs,
+    .character-actions,
+    .header-actions {
+        display: none !important;
+    }
+
+    .main-content {
+        padding: 0;
+        max-width: none;
+    }
+
+    .character-card,
+    .run-card,
+    .stat-card {
+        border: 1px solid #333;
+        break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+}

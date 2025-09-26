@@ -47,63 +47,64 @@
     "url": "your-repo-url"
   },
   "build": {
-  "appId": "com.shadowguard.tracker",
-  "productName": "Shadowguard Drop Tracker",
-  "directories": {
-    "output": "dist-electron"
-  },
-  "files": [
-    "electron-main.js",
-    "server.js",
-    "package.json",
-    "database/**/*",
-    "public/**/*",
-    "node_modules/**/*"
-  ],
-  "win": {
-    "target": {
-      "target": "nsis",
-      "arch": [
-        "x64"
-      ]
+    "appId": "com.shadowguard.tracker",
+    "productName": "Shadowguard Drop Tracker",
+    "asar": false,
+    "directories": {
+      "output": "dist-electron"
     },
-    "icon": "build/icon.ico",
-    "publisherName": "Shadowguard Tracker"
-  },
-  "mac": {
-    "target": {
-      "target": "dmg",
-      "arch": [
-        "x64",
-        "arm64"
-      ]
-    },
-    "icon": "build/icon.icns",
-    "category": "public.app-category.utilities"
-  },
-  "linux": {
-    "target": [
-      {
-        "target": "AppImage",
+    "files": [
+      "electron-main.js",
+      "server.js",
+      "package.json",
+      "database/**/*",
+      "public/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": {
+        "target": "nsis",
         "arch": [
           "x64"
         ]
       },
-      {
-        "target": "deb",
+      "icon": "build/icon.ico",
+      "publisherName": "Shadowguard Tracker"
+    },
+    "mac": {
+      "target": {
+        "target": "dmg",
         "arch": [
-          "x64"
+          "x64",
+          "arm64"
         ]
-      }
-    ],
-    "icon": "build/icon.png",
-    "category": "Utility"
-  },
-  "nsis": {
-    "oneClick": false,
-    "allowToChangeInstallationDirectory": true,
-    "createDesktopShortcut": true,
-    "createStartMenuShortcut": true
+      },
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
-}
 }

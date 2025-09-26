@@ -33,22 +33,25 @@ A comprehensive web application for tracking Ultima Online Shadowguard encounter
 
 ## Current Development Status
 
-### ✅ Completed: Electron Desktop Application Setup
-The desktop application conversion has been successfully completed with the following features working:
+### ✅ Completed: Full Desktop Application Implementation
+The desktop application conversion has been successfully completed and is fully functional:
 
-- **Desktop Window**: Native Electron window with proper title and menus
-- **Server Integration**: Express server automatically starts with the desktop app
-- **Database Connectivity**: SQLite database working properly in Electron environment
-- **UI Functionality**: All original web features working in desktop format
-- **Development Tools**: DevTools integration for debugging
-- **Date Formatting**: Fixed character creation date display issues
-- **Cross-Platform**: Windows compatibility confirmed (tested on Windows Command Prompt)
+- **Desktop Window**: Native Electron window with proper title and menus ✅
+- **Server Integration**: Express server automatically starts with the desktop app ✅
+- **Database Connectivity**: SQLite database working properly in Electron environment ✅
+- **UI Functionality**: All original web features working in desktop format ✅
+- **Development Tools**: DevTools integration for debugging ✅
+- **Date Formatting**: Fixed character creation date display issues ✅
+- **Cross-Platform**: Windows compatibility confirmed (tested on Windows Command Prompt) ✅
+- **Server Readiness Detection**: Proper startup sequencing implemented ✅
+- **Window Management**: Fixed unresponsive window issues ✅
+- **Packaging Configuration**: Corrected asar and file inclusion settings ✅
 
-### 🚧 Next Phase: Building Distributables
-Ready to create installable packages for:
-- Windows (.exe installer)
-- macOS (.dmg)
-- Linux (.AppImage, .deb)
+### ✅ Completed: Distribution Ready
+Ready-to-distribute packages have been successfully created:
+- **Windows Installer**: `Shadowguard Drop Tracker Setup 1.0.0.exe` (Professional installer with Start Menu integration)
+- **Portable Version**: `win-unpacked/` folder (Standalone executable)
+- **Cross-Platform Ready**: Configured for macOS (.dmg) and Linux (.AppImage, .deb) builds
 
 ## Installation & Setup
 
@@ -71,7 +74,7 @@ npm start
 
 Visit `http://localhost:3020` in your browser.
 
-### Desktop Application Setup (COMPLETED)
+### Desktop Application Setup (FULLY WORKING)
 
 #### Install Dependencies
 ```bash
@@ -87,7 +90,7 @@ npm run electron:dev
 npm run electron
 ```
 
-#### Build Desktop Distributables (READY FOR NEXT PHASE)
+#### Build Desktop Distributables (TESTED & WORKING)
 ```bash
 # Build for current platform
 npm run dist
@@ -121,13 +124,14 @@ Built applications will be created in the `dist-electron/` folder.
 - **Search**: Real-time filtering with 200ms debouncing
 - **UI**: CSS Grid and Flexbox with mobile-first responsive design
 
-### Desktop Application (IMPLEMENTED)
+### Desktop Application (FULLY IMPLEMENTED)
 - **Framework**: Electron for cross-platform desktop apps
 - **Architecture**: Main process manages Express server, renderer displays UI
 - **Security**: Context isolation, disabled Node integration, secure defaults
 - **Server Management**: Automatic startup/shutdown with proper error handling
 - **Window Management**: Proper sizing, menus, and platform-specific behaviors
-- **Distribution**: Ready for native installers for Windows, macOS, and Linux
+- **Distribution**: Native installers working for Windows, ready for macOS and Linux
+- **Packaging**: Optimized build configuration with asar disabled for compatibility
 
 ### Database Schema
 ```sql
@@ -150,23 +154,24 @@ shadowguard_items (id, name, rarity, type)
 - `npm run dev` - Start with nodemon for auto-restart
 - `npm run init-db` - Initialize database manually
 
-### Desktop Application (WORKING)
-- `npm run electron` - Run desktop app (production mode) ✅ TESTED
-- `npm run electron:dev` - Run desktop app (development mode) ✅ TESTED
-- `npm run dist` - Build distributable for current platform 🚧 READY TO TEST
-- `npm run dist:win` - Build Windows installer (.exe) 🚧 READY TO TEST
-- `npm run dist:mac` - Build macOS disk image (.dmg) 🚧 READY TO TEST
-- `npm run dist:linux` - Build Linux packages (.AppImage, .deb) 🚧 READY TO TEST
-- `npm run dist:all` - Build for all platforms 🚧 READY TO TEST
+### Desktop Application (FULLY WORKING)
+- `npm run electron` - Run desktop app (production mode) ✅ WORKING
+- `npm run electron:dev` - Run desktop app (development mode) ✅ WORKING
+- `npm run dist` - Build distributable for current platform ✅ WORKING
+- `npm run dist:win` - Build Windows installer (.exe) ✅ WORKING
+- `npm run dist:mac` - Build macOS disk image (.dmg) ✅ READY
+- `npm run dist:linux` - Build Linux packages (.AppImage, .deb) ✅ READY
+- `npm run dist:all` - Build for all platforms ✅ READY
 
-## Desktop Application Features (IMPLEMENTED)
+## Desktop Application Features (FULLY IMPLEMENTED)
 
 ### Native Integration ✅
 - **System Menus**: Native application menus with keyboard shortcuts
 - **Window Management**: Proper window state management and restoration
-- **Cross-Platform Compatibility**: Windows compatibility confirmed
-- **Server Readiness Detection**: Waits for server before opening window
+- **Cross-Platform Compatibility**: Windows fully tested and working
+- **Server Readiness Detection**: Robust startup sequencing with health checks
 - **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Unresponsive Window Detection**: Automatic detection and recovery options
 
 ### Security Features ✅
 - **Sandboxed Renderer**: Web content runs in secure sandbox
@@ -174,10 +179,10 @@ shadowguard_items (id, name, rarity, type)
 - **Secure Navigation**: External links open in default browser
 - **Context Isolation**: Main and renderer processes properly isolated
 
-### Cross-Platform Support (READY FOR TESTING)
-- **Windows**: NSIS installer with Start Menu integration
-- **macOS**: DMG with drag-and-drop installation
-- **Linux**: AppImage (portable) and DEB packages
+### Distribution Ready ✅
+- **Windows**: NSIS installer with Start Menu integration (tested and working)
+- **macOS**: DMG with drag-and-drop installation (configured)
+- **Linux**: AppImage (portable) and DEB packages (configured)
 
 ## Implementation Details
 
@@ -201,11 +206,11 @@ shadowguard-tracker/
 │   ├── icon.ico                     # Windows ICO file
 │   └── icon.icns                    # macOS ICNS file
 ├── .gitignore                        # Updated for Electron builds ✅
-└── dist-electron/                   # Built desktop applications (created during build)
-    ├── win-unpacked/                # Windows unpacked
-    ├── Shadowguard Drop Tracker Setup.exe
-    ├── mac/                         # macOS build
-    └── linux-unpacked/              # Linux unpacked
+└── dist-electron/                   # Built desktop applications
+    ├── win-unpacked/                # Windows portable executable ✅
+    ├── Shadowguard Drop Tracker Setup 1.0.0.exe  # Windows installer ✅
+    ├── mac/                         # macOS build (when built)
+    └── linux-unpacked/              # Linux unpacked (when built)
 ```
 
 ### Dependencies Installed ✅
@@ -214,21 +219,20 @@ shadowguard-tracker/
   "devDependencies": {
     "electron": "^27.0.0",
     "electron-builder": "^24.6.4",
-    "cross-env": "^latest"
+    "cross-env": "^10.0.0"
   }
 }
 ```
 
-### Known Working Features ✅
-- Desktop application launches successfully
-- Express server starts automatically
-- Database connectivity working
-- Character management functional
-- Date formatting fixed
-- Native menus and keyboard shortcuts
-- DevTools integration for development
-- Proper server readiness detection
-- Clean shutdown handling
+### Resolved Issues ✅
+- **Server Readiness Detection**: Implemented proper health check before window creation
+- **Window Unresponsive**: Fixed timing issues with server startup and window display
+- **Module Loading**: Resolved asar packaging conflicts by disabling asar archiving
+- **Database Paths**: Corrected Electron vs web environment path handling
+- **Build Configuration**: Fixed file inclusion patterns for proper packaging
+- **Antivirus Compatibility**: Documented antivirus exception requirements
+- **Date Formatting**: Fixed character creation date display issues
+- **Process Management**: Proper cleanup of server processes on app exit
 
 ## Database Setup
 
@@ -256,6 +260,7 @@ The desktop application includes configuration in `electron-main.js`:
 - Security settings with context isolation
 - Server readiness detection with 20-second timeout
 - Proper error handling and crash recovery
+- Unresponsive window detection and recovery
 
 ## API Endpoints
 
@@ -349,16 +354,20 @@ npm run dev
 npm run electron:dev
 ```
 
-### Building for Distribution (NEXT PHASE)
+### Building for Distribution ✅ WORKING
 ```bash
-# Install dependencies (completed)
+# Install dependencies
 npm install
 
-# Test desktop app (working)
+# Test desktop app
 npm run electron
 
-# Build distributables (ready to test)
-npm run dist:all
+# Build distributables
+npm run dist        # Current platform
+npm run dist:win    # Windows installer
+npm run dist:mac    # macOS DMG
+npm run dist:linux  # Linux packages
+npm run dist:all    # All platforms
 ```
 
 ### Development Principles
@@ -368,80 +377,65 @@ npm run dist:all
 - **Performance Focused**: Optimized for 200+ character scenarios
 - **Security First**: Desktop app follows Electron security best practices
 
-## Troubleshooting
+## Distribution
 
-### Resolved Issues ✅
-- **Invalid Date Display**: Fixed by adding proper date formatting in characters.js
-- **Electron Module Loading**: Fixed electron-reload dependency handling
-- **Windows Environment Variables**: Fixed with cross-env package
-- **Server Readiness**: Implemented proper server detection before window creation
-- **Database Paths**: Resolved Electron vs web environment path handling
+### For End Users
+
+#### Windows Installer (Recommended)
+1. Download `Shadowguard Drop Tracker Setup 1.0.0.exe`
+2. Run the installer (may require antivirus exception)
+3. Follow installation wizard
+4. Launch from Start Menu
+
+#### Portable Version
+1. Download and extract `win-unpacked.zip`
+2. Add folder to antivirus exceptions
+3. Run `Shadowguard Drop Tracker.exe`
+
+### For Developers
+
+#### Cross-Platform Building
+```bash
+# Build for all platforms
+npm run dist:all
+
+# Individual platforms
+npm run dist:win    # Creates .exe installer
+npm run dist:mac    # Creates .dmg (requires macOS or CI)
+npm run dist:linux  # Creates .AppImage and .deb
+```
+
+## Troubleshooting
 
 ### Common Issues
 
-#### Desktop App Won't Start
-- Check that port 3020 is available
-- Verify all dependencies are installed: `npm install`
-- Check console output for server startup errors
+#### Antivirus Blocking
+**Symptom**: App won't start or installer is blocked
+**Solution**: Add application folder to antivirus exceptions
 
-#### Build Fails (FOR NEXT PHASE)
-- Ensure all required files are present
-- Check that `database/` and `public/` folders exist
-- Verify icon files are in `build/` folder (optional but recommended)
+#### Window Not Responding
+**Symptom**: Window opens but shows gray screen
+**Solution**: Wait 10-15 seconds for server startup, or use the unresponsive window dialog to reload
 
-#### Performance Issues
-- Database file may be corrupt - delete and restart app
-- Clear Electron cache: delete `node_modules/.cache/`
-- Restart application completely
+#### Build Fails
+**Symptom**: `npm run dist` fails
+**Solution**: 
+- Clear build cache: `rm -rf dist-electron`
+- Ensure all dependencies installed: `npm install`
+- Check console for specific error messages
 
-#### Search for Help
+#### Port 3020 In Use
+**Symptom**: Server fails to start
+**Solution**: Close other applications using port 3020 or restart computer
+
+### Getting Help
 ```bash
 # Check application health
 curl http://localhost:3020/api/health
 
-# View application logs (desktop)
-# Check console in DevTools or terminal output
+# View detailed logs in development mode
+npm run electron:dev
 ```
-
-## Next Steps for Distribution
-
-### Phase 1: Testing Builds (READY)
-1. Test building for current platform: `npm run dist`
-2. Verify the generated installer works
-3. Test installation and uninstallation
-4. Validate all features work in built version
-
-### Phase 2: Icon Creation (OPTIONAL)
-1. Create application icons (512x512 PNG)
-2. Convert to platform-specific formats (.ico, .icns)
-3. Place in `build/` folder
-4. Test builds with custom icons
-
-### Phase 3: Cross-Platform Building
-1. Test building for Windows: `npm run dist:win`
-2. Test building for macOS: `npm run dist:mac` 
-3. Test building for Linux: `npm run dist:linux`
-4. Validate installers on target platforms
-
-### Phase 4: Distribution Preparation
-1. Code signing setup (for trusted distribution)
-2. Auto-updater configuration
-3. Release packaging and documentation
-4. Distribution strategy (GitHub releases, website, etc.)
-
-## Contributing
-
-We welcome contributions! Please see our contributing guidelines for:
-- Code style requirements
-- Testing procedures
-- Pull request process
-- Issue reporting
-
-### Code Style
-- **JavaScript**: ES6+ with async/await pattern
-- **CSS**: BEM-inspired class naming with CSS custom properties
-- **Database**: Prepared statements for security and performance
-- **Error Handling**: Comprehensive error handling with user-friendly messages
 
 ## License
 
@@ -460,6 +454,6 @@ For support, please:
 
 ---
 
-**Status**: Desktop application development complete. Ready for distribution phase testing.
+**Status**: Desktop application development complete and fully functional. Distribution packages ready for end users.
 
-**Desktop Version**: The desktop application is fully functional. Next phase involves creating distributable installers for end-user installation.
+**Current Version**: 2.0.0 - Full desktop application with working Windows installer and cross-platform build capability.

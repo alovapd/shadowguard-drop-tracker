@@ -202,20 +202,53 @@ function createWindow() {
         // Create application menu
         createApplicationMenu();
 
+        // Add debugging for the web contents
+        mainWindow.webContents.on('dom-ready', () => {
+            console.log('DOM is ready');
+        });
+
+        mainWindow.webContents.on('did-finish-load', () => {
+            console.log('Page finished loading');
+        });
+
+        mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+            console.error('Failed to load page:', errorCode, errorDescription, validatedURL);
+        });
+
+        mainWindow.webContents.on('did-fail-provisional-load', (event, errorCode, errorDescription, validatedURL) => {
+            console.error('Failed provisional load:', errorCode, errorDescription, validatedURL);
+        });
+
         // Load the app
         console.log('Loading app at http://localhost:3020');
-        mainWindow.loadURL('http://localhost:3020');
+        
+        try {
+            await mainWindow.loadURL('http://localhost:3020');
+            console.log('loadURL completed successfully');
+        } catch (error) {
+            console.error('Error loading URL:', error);
+            dialog.showErrorBox('Load Error', `Failed to load application: ${error.message}`);
+            return;
+        }
 
-        // Show window when ready to prevent visual flash
-        mainWindow.once('ready-to-show', () => {
-            console.log('Window ready to show');
-            mainWindow.show();
-            
-            // Focus on window
-            if (process.platform === 'darwin') {
-                app.dock.show();
-            }
-        });
+// Show window when ready to prevent visual flash
+mainWindow.once('ready-to-show', () => {
+    console.log('Window ready to show');
+    mainWindow.show();
+    
+    // Focus on window
+    if (process.platform === 'darwin') {
+        app.dock.show();
+    }
+});
+
+// Add a backup timer to show the window if ready-to-show doesn't fire
+setTimeout(() => {
+    if (mainWindow && !mainWindow.isVisible()) {
+        console.log('Forcing window to show after timeout');
+        mainWindow.show();
+    }
+}, 3000); // Show after 3 seconds regardless
 
         // Open DevTools in development
         if (process.env.NODE_ENV === 'development') {
@@ -259,6 +292,29 @@ function createWindow() {
                 }
                 app.quit();
             });
+        });
+
+        // Add unresponsive window handling
+        mainWindow.on('unresponsive', () => {
+            console.log('Window became unresponsive');
+            const options = {
+                type: 'warning',
+                title: 'Window Unresponsive',
+                message: 'The window has become unresponsive. Would you like to reload it?',
+                buttons: ['Reload', 'Keep Waiting', 'Close']
+            };
+            
+            dialog.showMessageBox(options).then((result) => {
+                if (result.response === 0) {
+                    mainWindow.reload();
+                } else if (result.response === 2) {
+                    mainWindow.close();
+                }
+            });
+        });
+
+        mainWindow.on('responsive', () => {
+            console.log('Window became responsive again');
         });
     };
     

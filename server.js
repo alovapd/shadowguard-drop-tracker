@@ -6,23 +6,11 @@ const path = require('path');
 const isElectron = process.versions && process.versions.electron;
 
 // Set correct paths for Electron vs normal Node.js
-const basePath = isElectron 
-  ? path.join(process.resourcesPath, 'app')
-  : __dirname;
-
-const publicPath = isElectron 
-  ? path.join(process.resourcesPath, 'public')
-  : path.join(__dirname, 'public');
+// In packaged Electron apps, files are in normal directory structure relative to server.js
+const publicPath = path.join(__dirname, 'public');
 
 // For database, we need to handle both packaged and development scenarios
-let DatabaseManager;
-
-if (isElectron) {
-  // In Electron, always use the local path for development
-  DatabaseManager = require('./database/init');
-} else {
-  DatabaseManager = require('./database/init');
-}
+const DatabaseManager = require('./database/init');
 
 const app = express();
 const PORT = 3020;

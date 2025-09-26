@@ -1,22 +1,43 @@
 // server.js
 const express = require('express');
 const path = require('path');
-const DatabaseManager = require('./database/init');
+
+// Detect if running in Electron
+const isElectron = process.versions && process.versions.electron;
+
+// Set correct paths for Electron vs normal Node.js
+const basePath = isElectron 
+  ? path.join(process.resourcesPath, 'app')
+  : __dirname;
+
+const publicPath = isElectron 
+  ? path.join(process.resourcesPath, 'public')
+  : path.join(__dirname, 'public');
+
+// For database, we need to handle both packaged and development scenarios
+let DatabaseManager;
+
+if (isElectron) {
+  // In Electron, always use the local path for development
+  DatabaseManager = require('./database/init');
+} else {
+  DatabaseManager = require('./database/init');
+}
 
 const app = express();
 const PORT = 3020;
-const db = new DatabaseManager();
+const db = new DatabaseManager(); // Let it use the default path
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(publicPath));
 
 // Initialize database
 db.initialize().catch(console.error);
 
 // Serve main page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 // Character routes
@@ -217,7 +238,8 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         timestamp: new Date().toISOString(),
-        version: '2.0.0' // Updated version for multi-party support
+        version: '2.0.0', // Updated version for multi-party support
+        platform: isElectron ? 'electron' : 'web'
     });
 });
 
@@ -298,6 +320,9 @@ process.on('unhandledRejection', (reason, promise) => {
 app.listen(PORT, () => {
     console.log(`Shadowguard Drop Tracker v2.0 running on http://localhost:${PORT}`);
     console.log('Multi-party support enabled');
+    if (isElectron) {
+        console.log('Running in Electron mode');
+    }
     console.log('Press Ctrl+C to stop server');
 });
 

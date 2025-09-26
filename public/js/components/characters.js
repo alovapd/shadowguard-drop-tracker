@@ -7,6 +7,28 @@ class CharactersComponent {
         this.searchQuery = '';
     }
 
+    // Utility function to format dates consistently
+    formatDate(dateString) {
+        try {
+            const date = new Date(dateString);
+            
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date';
+            }
+            
+            // Format as MM/DD/YYYY
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const year = date.getFullYear();
+            
+            return `${month}/${day}/${year}`;
+        } catch (error) {
+            console.error('Date formatting error:', error, 'for date:', dateString);
+            return 'Invalid Date';
+        }
+    }
+
     async init() {
         try {
             await this.loadCharacters();
@@ -223,7 +245,7 @@ class CharactersComponent {
                     <div class="character-stats">
                         <div class="stat-row">
                             <span>Added:</span>
-                            <span>${formatDate(character.created_at)}</span>
+                            <span>${this.formatDate(character.created_at)}</span>
                         </div>
                         <div class="stat-row">
                             <span>Character ID:</span>

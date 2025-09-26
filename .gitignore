@@ -172,3 +172,37 @@ config/production.json
 
 # Uploaded files (if any)
 uploads/
+
+# Electron build outputs
+dist-electron/
+out/
+release/
+
+# Electron cache
+.electron/
+.electron-gyp/
+
+# Electron builder cache
+node_modules/.cache/electron-builder/
+
+# Electron packager output
+*-darwin-x64/
+*-linux-x64/
+*-win32-x64/
+*-mas-x64/
+
+# App specific builds
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.AppImage
+*.snap
+*.exe
+*.msi
+*.nsis
+*.zip
+*.tar.gz
+
+# Icon build artifacts
+build/icons/

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadowguard Drop Tracker</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner hidden" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="app-title">Shadowguard Drop Tracker</h1>
+            <nav class="nav-buttons">
+                <button class="btn btn-primary" onclick="showTab('characters')">Characters</button>
+                <button class="btn btn-primary" onclick="showTab('runs')">Runs</button>
+                <button class="btn btn-primary" onclick="showTab('analytics')">Analytics</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Characters Tab -->
+        <div id="characters-tab" class="tab-content active">
+            <div class="tab-header">
+                <h2>Character Management</h2>
+                <div class="header-actions">
+                    <button class="btn btn-accent" onclick="openAddCharacterModal()">
+                        Add Character
+                    </button>
+                </div>
+            </div>
+
+            <!-- Characters Grid -->
+            <div class="characters-grid" id="charactersGrid">
+                <!-- Characters will be loaded here dynamically -->
+            </div>
+        </div>
+
+        <!-- Runs Tab -->
+        <div id="runs-tab" class="tab-content">
+            <div class="tab-header">
+                <h2>Log New Run</h2>
+            </div>
+
+            <!-- New Run Interface -->
+            <div class="new-run-interface">
+                <div class="run-form-header">
+                    <div class="form-group date-input">
+                        <label for="runDateTime">Run Date & Time</label>
+                        <input type="datetime-local" id="runDateTime" name="datetime" required>
+                    </div>
+                    <button class="btn btn-accent" id="saveRunBtn" onclick="saveCurrentRun()">
+                        Save Run
+                    </button>
+                </div>
+
+                <!-- Character Selection Cards -->
+                <div class="character-selection-section">
+                    <h3>Select Participants & Drops</h3>
+                    <div class="character-cards-grid" id="characterCardsGrid">
+                        <!-- Character cards will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Run History -->
+            <div class="runs-history-section">
+                <div class="section-header">
+                    <h3>Recent Runs</h3>
+                    <button class="btn btn-secondary" onclick="refreshRuns()">
+                        Refresh
+                    </button>
+                </div>
+                <div class="runs-list" id="runsList">
+                    <!-- Runs will be loaded here dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="tab-header">
+                <h2>Drop Analytics</h2>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="refreshAnalytics()">
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Overall Stats -->
+            <div class="stats-grid" id="overallStats">
+                <!-- Stats cards will be loaded here -->
+            </div>
+
+            <!-- Analytics Sections -->
+            <div class="analytics-sections">
+                <!-- Character Drop Statistics -->
+                <section class="analytics-section">
+                    <h3>Character Drop Statistics</h3>
+                    <div class="character-stats-list" id="characterStats">
+                        <!-- Character stats will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Item Drop Rates -->
+                <section class="analytics-section">
+                    <h3>Item Drop Rates</h3>
+                    <div class="common-drops" id="itemDropRates">
+                        <!-- Item rates will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Recent Activity -->
+                <section class="analytics-section">
+                    <h3>Recent Activity</h3>
+                    <div class="recent-activity" id="recentActivity">
+                        <!-- Recent activity will be loaded here -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Character Modal -->
+    <div class="modal hidden" id="addCharacterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Character</h2>
+                <button class="modal-close" onclick="closeModal('addCharacterModal')">&times;</button>
+            </div>
+            <form class="modal-form" id="addCharacterForm">
+                <div class="form-group">
+                    <label for="characterName">Character Name</label>
+                    <input type="text" id="characterName" name="name" required maxlength="50">
+                    <div class="form-text">Enter the character name (up to 50 characters)</div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCharacterModal')">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-accent">
+                        Add Character
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal hidden" id="confirmDeleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="modal-close" onclick="closeModal('confirmDeleteModal')">&times;</button>
+            </div>
+            <div class="modal-form">
+                <p id="deleteMessage">Are you sure you want to delete this item?</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('confirmDeleteModal')">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/api.js"></script>
+    <script src="js/components/characters.js"></script>
+    <script src="js/components/runs.js"></script>
+    <script src="js/components/drops.js"></script>
+    <script src="js/components/analytics.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -126,7 +126,7 @@ class AnalyticsComponent {
             </div>
             
             <div class="stat-card">
-                <h3>Drops per Run${partyContext}</h3>
+                <h3>Drops per Run (Avg)${partyContext}</h3>
                 <div class="stat-value">${dropsPerRun}</div>
             </div>
             
@@ -137,7 +137,7 @@ class AnalyticsComponent {
             
             <div class="stat-card">
                 <h3>Drop Rate${partyContext}</h3>
-                <div class="stat-value">${stats.total_runs ? ((stats.total_drops / stats.total_runs) * 100).toFixed(1) : 0}%</div>
+                <div class="stat-value">${stats.drop_rate_percentage?.toFixed(1) || 0}%</div>
             </div>
         `;
     }

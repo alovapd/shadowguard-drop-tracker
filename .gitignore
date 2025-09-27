@@ -206,3 +206,7 @@ node_modules/.cache/electron-builder/
 
 # Icon build artifacts
 build/icons/
+
+# Development utilities
+clean-for-distribution.js
+reset-database.js

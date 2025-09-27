@@ -44,12 +44,24 @@ class DatabaseManager {
             const stmt = this.db.prepare('INSERT INTO characters (name) VALUES (?)');
             stmt.run([name], function(err) {
                 if (err) {
+                    stmt.finalize();
                     reject(err);
                     return;
                 }
-                resolve({ id: this.lastID, name });
-            });
-            stmt.finalize();
+                
+                const insertId = this.lastID;
+                stmt.finalize();
+                
+                // Return character with current timestamp
+                const now = new Date().toISOString();
+                
+                resolve({ 
+                    id: insertId, 
+                    name: name,
+                    created_at: now
+                });
+                
+            }.bind(this));
         });
     }
 
@@ -104,46 +116,63 @@ class DatabaseManager {
     // Run methods - Updated for multi-party support
     async addRun(date, participantCount, success, participantIds, notes = null, partyNumber = 1) {
         return new Promise((resolve, reject) => {
-            this.db.serialize(() => {
-                this.db.run('BEGIN TRANSACTION');
+            // Validate inputs
+            if (!participantIds || !Array.isArray(participantIds)) {
+                reject(new Error('participantIds must be an array'));
+                return;
+            }
+            
+            // Store database reference to avoid context issues
+            const db = this.db;
+            
+            // Insert run first
+            const runStmt = db.prepare('INSERT INTO runs (date, participant_count, success, notes, party_number) VALUES (?, ?, ?, ?, ?)');
+            
+            runStmt.run([date, participantCount, success, notes, partyNumber], function(err) {
+                if (err) {
+                    runStmt.finalize();
+                    reject(err);
+                    return;
+                }
                 
-                // Insert run with party number
-                const runStmt = this.db.prepare('INSERT INTO runs (date, participant_count, success, notes, party_number) VALUES (?, ?, ?, ?, ?)');
-                runStmt.run([date, participantCount, success, notes, partyNumber], function(err) {
-                    if (err) {
-                        reject(err);
-                        return;
-                    }
-                    
-                    const runId = this.lastID;
-                    
-                    // Insert participants
-                    if (participantIds.length === 0) {
-                        runStmt.finalize();
-                        this.db.run('COMMIT');
-                        resolve({ id: runId, date, participantCount, success, partyNumber });
-                        return;
-                    }
-                    
-                    const participantStmt = this.db.prepare('INSERT INTO run_participants (run_id, character_id) VALUES (?, ?)');
-                    
-                    let completed = 0;
-                    participantIds.forEach(characterId => {
-                        participantStmt.run([runId, characterId], (err) => {
-                            if (err) {
-                                reject(err);
-                                return;
-                            }
-                            completed++;
-                            if (completed === participantIds.length) {
-                                participantStmt.finalize();
-                                this.db.run('COMMIT');
-                                resolve({ id: runId, date, participantCount, success, partyNumber });
-                            }
-                        });
-                    });
-                }.bind(this));
+                const runId = this.lastID;
                 runStmt.finalize();
+                
+                if (!runId) {
+                    reject(new Error('Failed to get valid run ID'));
+                    return;
+                }
+                
+                // If no participants, resolve immediately
+                if (participantIds.length === 0) {
+                    resolve({ id: runId, date, participantCount, success, partyNumber });
+                    return;
+                }
+                
+                // Insert participants
+                const participantStmt = db.prepare('INSERT INTO run_participants (run_id, character_id) VALUES (?, ?)');
+                
+                let completed = 0;
+                let hasError = false;
+                
+                participantIds.forEach((characterId) => {
+                    if (hasError) return;
+                    
+                    participantStmt.run([runId, characterId], (err) => {
+                        if (err && !hasError) {
+                            hasError = true;
+                            participantStmt.finalize();
+                            reject(err);
+                            return;
+                        }
+                        
+                        completed++;
+                        if (completed === participantIds.length && !hasError) {
+                            participantStmt.finalize();
+                            resolve({ id: runId, date, participantCount, success, partyNumber });
+                        }
+                    });
+                });
             });
         });
     }
@@ -219,9 +248,7 @@ class DatabaseManager {
         });
     }
 
-    // Analytics methods - Updated for multi-party support
-    // CRITICAL FIX: Character stats should NEVER be filtered by party
-    // They should aggregate across ALL parties
+    // Analytics methods - FIXED: Proper aggregation without Cartesian products
     async getCharacterDropStats() {
         return new Promise((resolve, reject) => {
             const query = `
@@ -341,39 +368,76 @@ class DatabaseManager {
         });
     }
 
+    // FIXED: Complete rewrite of getOverallStats with proper drop rate calculation
     async getOverallStats(partyNumber = null) {
         return new Promise((resolve, reject) => {
-            let query = `
-                SELECT 
-                    COUNT(DISTINCT c.id) as total_characters,
-                    COUNT(DISTINCT r.id) as total_runs,
-                    COUNT(DISTINCT CASE WHEN r.success = 1 THEN r.id END) as successful_runs,
-                    COUNT(d.id) as total_drops,
-                    ROUND(AVG(r.participant_count), 1) as avg_participants,
-                    ROUND(
-                        (COUNT(d.id) * 1.0) / 
-                        NULLIF(COUNT(DISTINCT CASE WHEN r.success = 1 THEN r.id END), 0), 
-                        2
-                    ) as drops_per_successful_run
-                FROM characters c
-                CROSS JOIN runs r
-                LEFT JOIN drops d ON r.id = d.run_id AND r.success = 1
-            `;
+            // First get basic counts
+            const queries = {
+                characters: 'SELECT COUNT(*) as count FROM characters',
+                runs: partyNumber && partyNumber !== 'all' 
+                    ? 'SELECT COUNT(*) as count FROM runs WHERE party_number = ?' 
+                    : 'SELECT COUNT(*) as count FROM runs',
+                successful_runs: partyNumber && partyNumber !== 'all'
+                    ? 'SELECT COUNT(*) as count FROM runs WHERE success = 1 AND party_number = ?'
+                    : 'SELECT COUNT(*) as count FROM runs WHERE success = 1',
+                drops: partyNumber && partyNumber !== 'all'
+                    ? 'SELECT COUNT(*) as count FROM drops d WHERE d.run_id IN (SELECT id FROM runs WHERE success = 1 AND party_number = ?)'
+                    : 'SELECT COUNT(*) as count FROM drops d WHERE d.run_id IN (SELECT id FROM runs WHERE success = 1)',
+                avg_participants: partyNumber && partyNumber !== 'all'
+                    ? 'SELECT AVG(participant_count) as avg FROM runs WHERE party_number = ?'
+                    : 'SELECT AVG(participant_count) as avg FROM runs',
+                // NEW: Calculate total character-run opportunities for proper drop rate
+                total_opportunities: partyNumber && partyNumber !== 'all'
+                    ? `SELECT SUM(r.participant_count) as total FROM runs r WHERE r.success = 1 AND r.party_number = ?`
+                    : `SELECT SUM(r.participant_count) as total FROM runs r WHERE r.success = 1`
+            };
             
-            const params = [];
+            const params = partyNumber && partyNumber !== 'all' ? [parseInt(partyNumber)] : [];
             
-            if (partyNumber && partyNumber !== 'all') {
-                query += ' WHERE r.party_number = ?';
-                params.push(parseInt(partyNumber));
+            const results = {};
+            let completed = 0;
+            const totalQueries = Object.keys(queries).length;
+            
+            for (const [key, query] of Object.entries(queries)) {
+                this.db.get(query, params, (err, row) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    
+                    if (key === 'avg_participants') {
+                        results[key] = Math.round((row.avg || 0) * 10) / 10; // Round to 1 decimal
+                    } else if (key === 'total_opportunities') {
+                        results[key] = row.total || 0;
+                    } else {
+                        results[key] = row.count || 0;
+                    }
+                    
+                    completed++;
+                    if (completed === totalQueries) {
+                        // Calculate derived metrics
+                        const dropsPerRun = results.successful_runs > 0 
+                            ? Math.round((results.drops / results.successful_runs) * 100) / 100
+                            : 0;
+                        
+                        // FIXED: Proper drop rate = drops / total character opportunities × 100
+                        const dropRate = results.total_opportunities > 0
+                            ? Math.round((results.drops / results.total_opportunities) * 10000) / 100 // Round to 2 decimals
+                            : 0;
+                        
+                        resolve({
+                            total_characters: results.characters,
+                            total_runs: results.runs,
+                            successful_runs: results.successful_runs,
+                            total_drops: results.drops,
+                            avg_participants: results.avg_participants,
+                            drops_per_successful_run: dropsPerRun,
+                            drop_rate_percentage: dropRate,
+                            total_character_opportunities: results.total_opportunities
+                        });
+                    }
+                });
             }
-            
-            this.db.get(query, params, (err, row) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                resolve(row);
-            });
         });
     }
 

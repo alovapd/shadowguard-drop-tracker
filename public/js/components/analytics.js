@@ -567,3 +567,4 @@ function filterAnalytics() {
 
 // Export for use in other modules
 window.analyticsComponent = analyticsComponent;
+

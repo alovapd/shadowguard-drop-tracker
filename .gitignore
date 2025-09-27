@@ -210,3 +210,4 @@ build/icons/
 # Development utilities
 clean-for-distribution.js
 reset-database.js
+

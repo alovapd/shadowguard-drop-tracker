@@ -16,6 +16,9 @@ const app = express();
 const PORT = 3020;
 const db = new DatabaseManager(); // Let it use the default path
 
+// Store server instance for cleanup
+let server = null;
+
 // Middleware
 app.use(express.json());
 app.use(express.static(publicPath));
@@ -278,19 +281,36 @@ app.use((req, res) => {
     });
 });
 
-// Graceful shutdown
+// Graceful shutdown function
 const gracefulShutdown = (signal) => {
     console.log(`\nReceived ${signal}. Shutting down gracefully...`);
     
-    // Close database connection
-    if (db) {
-        db.close();
+    // Close server first
+    if (server) {
+        server.close((err) => {
+            if (err) {
+                console.error('Error closing server:', err);
+            } else {
+                console.log('Server closed successfully');
+            }
+            
+            // Close database connection
+            if (db) {
+                db.close();
+            }
+            
+            process.exit(0);
+        });
+    } else {
+        // If no server instance, just close database and exit
+        if (db) {
+            db.close();
+        }
+        process.exit(0);
     }
-    
-    // Close server
-    process.exit(0);
 };
 
+// Signal handlers
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
@@ -305,13 +325,50 @@ process.on('unhandledRejection', (reason, promise) => {
     gracefulShutdown('unhandledRejection');
 });
 
-app.listen(PORT, () => {
-    console.log(`Shadowguard Drop Tracker v2.0 running on http://localhost:${PORT}`);
-    console.log('Multi-party support enabled');
-    if (isElectron) {
-        console.log('Running in Electron mode');
-    }
-    console.log('Press Ctrl+C to stop server');
-});
+// Function to start server (for Electron integration)
+function startServer() {
+    return new Promise((resolve, reject) => {
+        server = app.listen(PORT, (err) => {
+            if (err) {
+                console.error('Failed to start server:', err);
+                reject(err);
+            } else {
+                console.log(`Shadowguard Drop Tracker v2.0 running on http://localhost:${PORT}`);
+                console.log('Multi-party support enabled');
+                if (isElectron) {
+                    console.log('Running in Electron mode');
+                }
+                console.log('Press Ctrl+C to stop server');
+                resolve(server);
+            }
+        });
+    });
+}
 
-module.exports = app;
+// Function to stop server (for Electron integration)
+function stopServer() {
+    return new Promise((resolve) => {
+        if (server) {
+            server.close(() => {
+                console.log('Server stopped');
+                server = null;
+                resolve();
+            });
+        } else {
+            resolve();
+        }
+    });
+}
+
+// Auto-start if not in Electron (for standalone web use)
+if (!isElectron) {
+    startServer().catch(console.error);
+}
+
+// Export both app and server control functions
+module.exports = {
+    app,
+    startServer,
+    stopServer,
+    getServer: () => server
+};
